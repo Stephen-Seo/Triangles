@@ -2,8 +2,10 @@
 #define TRIANGLES_STATE_HPP
 
 #include <bitset>
+#include <vector>
 
 #include <SFML/System.hpp>
+#include <SFML/Graphics.hpp>
 
 namespace Tri {
     struct State {
@@ -16,6 +18,11 @@ namespace Tri {
         const unsigned int height;
         const sf::Time dt;
 
+        std::vector<sf::ConvexShape> tris;
+        sf::ConvexShape currentTri;
+        enum CurrentState { NONE, FIRST, SECOND, THIRD } currentTri_state;
+
+        void handle_event(sf::Event *event);
         void update();
         void draw();
     };

@@ -27,15 +27,8 @@ int main(int argc, char **argv) {
         ImGui::SFML::ProcessEvent(event);
         if(event.type == sf::Event::Closed) {
             window.close();
-        } else if(event.type == sf::Event::KeyPressed) {
-            if(event.key.code == sf::Keyboard::H) {
-                state.flags.set(0);
-            }
-        } else if(event.type == sf::Event::KeyReleased) {
-            if(event.key.code == sf::Keyboard::H) {
-                state.flags.reset(0);
-            }
         }
+        state.handle_event(&event);
 
         // update
         ImGui::SFML::Update(window, state.dt);
