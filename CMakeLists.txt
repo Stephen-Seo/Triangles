@@ -19,6 +19,7 @@ endif()
 
 set(Triangles_SOURCES
     src/main.cpp
+    src/state.cpp
     third_party/imgui/imgui.cpp
     third_party/imgui/imgui_draw.cpp
     third_party/imgui/imgui_widgets.cpp

@@ -5,12 +5,19 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 
+#include "state.hpp"
+#include "imgui_helper.hpp"
+
 int main(int argc, char **argv) {
     // init
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Triangles");
+    Tri::State state{};
+
+    sf::RenderWindow window(
+        sf::VideoMode(state.width, state.height),
+        "Triangles",
+        sf::Style::Titlebar | sf::Style::Close);
     ImGui::SFML::Init(window);
     window.setFramerateLimit(60);
-    const sf::Time dt = sf::microseconds(16666);
 
     // main loop
     sf::Event event;
@@ -20,21 +27,28 @@ int main(int argc, char **argv) {
         ImGui::SFML::ProcessEvent(event);
         if(event.type == sf::Event::Closed) {
             window.close();
+        } else if(event.type == sf::Event::KeyPressed) {
+            if(event.key.code == sf::Keyboard::H) {
+                state.flags.set(0);
+            }
+        } else if(event.type == sf::Event::KeyReleased) {
+            if(event.key.code == sf::Keyboard::H) {
+                state.flags.reset(0);
+            }
         }
 
         // update
-        ImGui::SFML::Update(window, dt);
+        ImGui::SFML::Update(window, state.dt);
 
-        ImGui::Begin("Test window");
-        ImGui::Text("Test text");
+        state.update();
 
-        ImGui::End();
         ImGui::EndFrame();
         // update end
 
         // draw
         window.clear();
         ImGui::SFML::Render(window);
+        state.draw();
         window.display();
     }
 
