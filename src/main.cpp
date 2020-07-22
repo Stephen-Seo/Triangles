@@ -10,10 +10,10 @@
 
 int main(int argc, char **argv) {
     // init
-    Tri::State state{};
+    Tri::State state(argc, argv);
 
     // main loop
-    while(state.window.isOpen()) {
+    while(state.get_flags().test(1)) {
         state.handle_events();
         state.update();
         state.draw();

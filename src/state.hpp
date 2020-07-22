@@ -8,15 +8,19 @@
 #include <SFML/Graphics.hpp>
 
 namespace Tri {
-    struct State {
-        State();
+    class State {
+    public:
+        State(int argc, char **argv);
         ~State();
         /*
          * 0 - display help
+         * 1 - is running
          */
-        std::bitset<64> flags;
-        const unsigned int width;
-        const unsigned int height;
+    private:
+        typedef std::bitset<64> BitsetType;
+        BitsetType flags;
+        unsigned int width;
+        unsigned int height;
         const sf::Time dt;
 
         sf::RenderWindow window;
@@ -26,9 +30,15 @@ namespace Tri {
 
         sf::Event event;
 
+    public:
         void handle_events();
         void update();
         void draw();
+
+        unsigned int get_width();
+        unsigned int get_height();
+
+        const BitsetType get_flags() const;
     };
 }
 
