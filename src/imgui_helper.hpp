@@ -28,6 +28,7 @@ namespace Tri {
             ImGui::Text("Press \"U\" to undo. Clicking will remove all future undo history");
             ImGui::Text("Press \"R\" to undo.");
             ImGui::Text("Press \"C\" to change colors");
+            ImGui::Text("Press \"B\" to change background color");
             ImGui::End();
         }
     }
@@ -54,8 +55,16 @@ namespace Tri {
 
     inline void draw_color_picker(Tri::State *state) {
         if(state->get_flags().test(2)) {
-            ImGui::Begin("Color Picker");
+            ImGui::Begin("Tri Color Picker");
             ImGui::ColorPicker4("Tri Color", state->get_color());
+            ImGui::End();
+        }
+    }
+
+    inline void draw_bg_color_picker(Tri::State *state) {
+        if(state->get_flags().test(5)) {
+            ImGui::Begin("BG Color Picker");
+            ImGui::ColorPicker3("BG Color", state->get_bg_color());
             ImGui::End();
         }
     }

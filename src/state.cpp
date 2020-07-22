@@ -22,7 +22,9 @@ window(sf::VideoMode(800, 600), "Triangles", sf::Style::Titlebar | sf::Style::Cl
 trisIndex(0),
 currentTri_state(CurrentState::NONE),
 currentTri_maxState(CurrentState::NONE),
-colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f}
+colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f},
+bgColorPickerColor{0.0f, 0.0f, 0.0f},
+bgColor(sf::Color::Black)
 {
     flags.set(1); // is running
     ImGui::SFML::Init(window);
@@ -96,9 +98,11 @@ void Tri::State::handle_events() {
                 }
             } else if(event.key.code == sf::Keyboard::C) {
                 flags.flip(2);
+            } else if(event.key.code == sf::Keyboard::B) {
+                flags.flip(5);
             }
         } else if(event.type == sf::Event::MouseButtonPressed) {
-            if(!flags.test(2)) {
+            if(!flags.test(2) && !flags.test(5)) {
                 switch(currentTri_state) {
                 case CurrentState::NONE:
                     currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
@@ -155,16 +159,24 @@ void Tri::State::update() {
             (unsigned char)(255 * colorPickerColor[3])));
     }
 
+    if(flags.test(4)) {
+        flags.reset(4);
+        bgColor.r = (unsigned char)(255 * bgColorPickerColor[0]);
+        bgColor.g = (unsigned char)(255 * bgColorPickerColor[1]);
+        bgColor.b = (unsigned char)(255 * bgColorPickerColor[2]);
+    }
+
     // Seems misleading, but imgui handles setting up the window during update
     Tri::draw_show_help(this);
     Tri::draw_color_picker(this);
+    Tri::draw_bg_color_picker(this);
     Tri::draw_help(this);
 
     ImGui::EndFrame();
 }
 
 void Tri::State::draw() {
-    window.clear();
+    window.clear(bgColor);
 
     // draw tris
     for(unsigned int i = 0; i < trisIndex; ++i) {
@@ -202,4 +214,9 @@ float Tri::State::get_starting_help_alpha() const {
 float* Tri::State::get_color() {
     flags.set(3);
     return colorPickerColor;
+}
+
+float* Tri::State::get_bg_color() {
+    flags.set(4);
+    return bgColorPickerColor;
 }
