@@ -17,8 +17,11 @@ currentTri_state(CurrentState::NONE)
     ImGui::SFML::Init(window);
     window.setFramerateLimit(60);
 
-    currentTri.setPointCount(3);
-    currentTri.setFillColor(sf::Color::White);
+    pointCircle.setRadius(7.0f);
+    pointCircle.setOrigin(7.0f, 7.0f);
+    pointCircle.setFillColor(sf::Color::White);
+    pointCircle.setOutlineColor(sf::Color::Black);
+    pointCircle.setOutlineThickness(1.0f);
 }
 
 Tri::State::~State() {
@@ -39,12 +42,21 @@ void Tri::State::handle_events() {
         } else if(event.type == sf::Event::MouseButtonPressed) {
             switch(currentTri_state) {
             case CurrentState::NONE:
+                currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                currentTri_state = CurrentState::FIRST;
                 break;
             case CurrentState::FIRST:
+                currentTri[1] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                currentTri_state = CurrentState::SECOND;
                 break;
             case CurrentState::SECOND:
-                break;
-            case CurrentState::THIRD:
+                currentTri[2] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                tris.emplace_back(sf::ConvexShape(3));
+                tris.back().setPoint(0, currentTri[0]);
+                tris.back().setPoint(1, currentTri[1]);
+                tris.back().setPoint(2, currentTri[2]);
+                tris.back().setFillColor(sf::Color::White); // TODO use chosen color
+                currentTri_state = CurrentState::NONE;
                 break;
             }
         }
@@ -63,6 +75,17 @@ void Tri::State::update() {
 void Tri::State::draw() {
     window.clear();
     ImGui::SFML::Render(window);
+
+    // draw tris
+    for(auto& tri : tris) {
+        window.draw(tri);
+    }
+
+    // draw points
+    for(unsigned int i = 0; i < currentTri_state; ++i) {
+        pointCircle.setPosition(currentTri[i]);
+        window.draw(pointCircle);
+    }
 
     window.display();
 }

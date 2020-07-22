@@ -25,8 +25,9 @@ namespace Tri {
 
         sf::RenderWindow window;
         std::vector<sf::ConvexShape> tris;
-        sf::ConvexShape currentTri;
-        enum CurrentState { NONE, FIRST, SECOND, THIRD } currentTri_state;
+        sf::Vector2f currentTri[3];
+        enum CurrentState { NONE = 0, FIRST = 1, SECOND = 2} currentTri_state;
+        sf::CircleShape pointCircle;
 
         sf::Event event;
 
