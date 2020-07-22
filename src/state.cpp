@@ -46,6 +46,7 @@ bgColor(sf::Color::Black)
         flags.reset(8);
     } else {
         flags.set(8);
+        flags.set(7);
         drawCacheSprite.setTexture(drawCache.getTexture(), true);
     }
 }
