@@ -12,22 +12,26 @@ namespace Tri {
     public:
         State(int argc, char **argv);
         ~State();
+
+        enum CurrentState {NONE = 0, FIRST = 1, SECOND = 2};
+    private:
         /*
          * 0 - display help
          * 1 - is running
          */
-    private:
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
         unsigned int width;
         unsigned int height;
         const sf::Time dt;
+        float starting_help_alpha;
 
         sf::RenderWindow window;
         std::vector<sf::ConvexShape> tris;
         unsigned int trisIndex;
         sf::Vector2f currentTri[3];
-        enum CurrentState { NONE = 0, FIRST = 1, SECOND = 2} currentTri_state;
+        CurrentState currentTri_state;
+        CurrentState currentTri_maxState;
         sf::CircleShape pointCircle;
 
         sf::Event event;
@@ -37,10 +41,12 @@ namespace Tri {
         void update();
         void draw();
 
-        unsigned int get_width();
-        unsigned int get_height();
+        unsigned int get_width() const;
+        unsigned int get_height() const;
 
         const BitsetType get_flags() const;
+
+        float get_starting_help_alpha() const;
     };
 }
 
