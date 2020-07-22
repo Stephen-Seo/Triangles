@@ -38,6 +38,16 @@ bgColor(sf::Color::Black)
     pointCircle.setOutlineThickness(1.0f);
 
     saveFilenameBuffer.fill(0);
+
+    if(!drawCache.create(800, 600)) {
+#ifndef NDEBUG
+        puts("ERROR: Failed to initialize RenderTexture (draw cache)");
+#endif
+        flags.reset(8);
+    } else {
+        flags.set(8);
+        drawCacheSprite.setTexture(drawCache.getTexture(), true);
+    }
 }
 
 Tri::State::~State() {
@@ -56,6 +66,7 @@ void Tri::State::handle_events() {
                 if(event.key.code == sf::Keyboard::H) {
                     flags.flip(0);
                 } else if(event.key.code == sf::Keyboard::U) {
+                    flags.set(7);
                     if(currentTri_state > 0) {
                         switch(currentTri_state) {
                         case FIRST:
@@ -72,6 +83,7 @@ void Tri::State::handle_events() {
                         --trisIndex;
                     }
                 } else if(event.key.code == sf::Keyboard::R) {
+                    flags.set(7);
                     if(currentTri_state != CurrentState::NONE
                             && currentTri_state < currentTri_maxState) {
                         switch(currentTri_state) {
@@ -109,7 +121,8 @@ void Tri::State::handle_events() {
                 }
             }
         } else if(event.type == sf::Event::MouseButtonPressed) {
-            if(!flags.test(2) && !flags.test(5) && !flags.test(6)) {
+            if(!is_in_clickable_menu()) {
+                flags.set(7);
                 switch(currentTri_state) {
                 case CurrentState::NONE:
                     currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
@@ -184,7 +197,18 @@ void Tri::State::update() {
 }
 
 void Tri::State::draw() {
-    draw_to_target(&window);
+    if(flags.test(8)) {
+        // draw cache initialized
+        if(flags.test(7)) {
+            // draw cache dirty
+            flags.reset(7);
+            draw_to_target(&drawCache);
+            drawCache.display();
+        }
+        window.draw(drawCacheSprite);
+    } else {
+        draw_to_target(&window);
+    }
 
     // draw gui stuff
     ImGui::SFML::Render(window);
@@ -275,4 +299,8 @@ std::string_view Tri::State::failed_save_message() const {
 
 void Tri::State::close_save() {
     flags.reset(6);
+}
+
+bool Tri::State::is_in_clickable_menu() const {
+    return flags.test(2) || flags.test(5) || flags.test(6);
 }

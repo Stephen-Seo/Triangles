@@ -24,6 +24,8 @@ namespace Tri {
          * 4 - bg color picker color dirty
          * 5 - display bg color picker
          * 6 - draw save
+         * 7 - draw cache dirty
+         * 8 - draw cache initialized
          */
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
@@ -50,6 +52,9 @@ namespace Tri {
         FilenameBufferType saveFilenameBuffer;
         std::string failedSaveMessage;
 
+        sf::RenderTexture drawCache;
+        sf::Sprite drawCacheSprite;
+
     public:
         void handle_events();
         void update();
@@ -73,6 +78,9 @@ namespace Tri {
         bool do_save();
         std::string_view failed_save_message() const;
         void close_save();
+
+    private:
+        bool is_in_clickable_menu() const;
     };
 }
 
