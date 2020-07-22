@@ -12,42 +12,12 @@ int main(int argc, char **argv) {
     // init
     Tri::State state{};
 
-    sf::RenderWindow window(
-        sf::VideoMode(state.width, state.height),
-        "Triangles",
-        sf::Style::Titlebar | sf::Style::Close);
-    ImGui::SFML::Init(window);
-    window.setFramerateLimit(60);
-
     // main loop
-    sf::Event event;
-    while(window.isOpen()) {
-        // events
-        window.pollEvent(event);
-        ImGui::SFML::ProcessEvent(event);
-        if(event.type == sf::Event::Closed) {
-            window.close();
-        }
-        state.handle_event(&event);
-
-        // update
-        ImGui::SFML::Update(window, state.dt);
-
+    while(state.window.isOpen()) {
+        state.handle_events();
         state.update();
-
-        ImGui::EndFrame();
-        // update end
-
-        // draw
-        window.clear();
-        ImGui::SFML::Render(window);
         state.draw();
-        window.display();
     }
-
-    // cleanup
-    window.close();
-    ImGui::SFML::Shutdown();
 
     return 0;
 }

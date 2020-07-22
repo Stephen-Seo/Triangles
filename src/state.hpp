@@ -10,6 +10,7 @@
 namespace Tri {
     struct State {
         State();
+        ~State();
         /*
          * 0 - display help
          */
@@ -18,11 +19,14 @@ namespace Tri {
         const unsigned int height;
         const sf::Time dt;
 
+        sf::RenderWindow window;
         std::vector<sf::ConvexShape> tris;
         sf::ConvexShape currentTri;
         enum CurrentState { NONE, FIRST, SECOND, THIRD } currentTri_state;
 
-        void handle_event(sf::Event *event);
+        sf::Event event;
+
+        void handle_events();
         void update();
         void draw();
     };
