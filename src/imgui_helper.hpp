@@ -22,7 +22,7 @@ namespace Tri {
                 state->get_width() - 20.0f,
                 state->get_height() - 20.0f));
             ImGui::SetNextWindowBgAlpha(0.7f);
-            ImGui::Begin("Help Window", nullptr, ImGuiWindowFlags_NoDecoration);
+            ImGui::Begin("Help Window", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
             ImGui::Text("This is the help window - Press \"H\" to toggle this window");
             ImGui::Text("Click anywhere to create triangles, one point at a time");
             ImGui::Text("Press \"U\" to undo. Clicking will remove all future undo history");
@@ -43,7 +43,7 @@ namespace Tri {
             ImGui::SetNextWindowSize(sf::Vector2f(
                 SHOW_HELP_WIDTH,
                 SHOW_HELP_HEIGHT));
-            ImGui::Begin("Use Help Window", nullptr, ImGuiWindowFlags_NoDecoration);
+            ImGui::Begin("Use Help Window", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
             ImGui::SetWindowFontScale(3.0f);
             ImGui::Text("Press \"H\" for help");
             ImGui::End();
