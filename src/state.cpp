@@ -129,7 +129,6 @@ void Tri::State::handle_events() {
             }
         } else if(event.type == sf::Event::MouseButtonPressed) {
             if(!is_in_clickable_menu()) {
-                flags.set(7);
                 switch(currentTri_state) {
                 case CurrentState::NONE:
                     currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
@@ -160,6 +159,7 @@ void Tri::State::handle_events() {
                     tris.back().setFillColor(pointCircle.getFillColor());
                     currentTri_state = CurrentState::NONE;
                     currentTri_maxState = CurrentState::NONE;
+                    flags.set(7);
                     break;
                 }
             }
@@ -217,26 +217,23 @@ void Tri::State::draw() {
         draw_to_target(&window);
     }
 
+    for(unsigned int i = 0; i < currentTri_state; ++i) {
+        pointCircle.setPosition(currentTri[i]);
+        window.draw(pointCircle);
+    }
+
     // draw gui stuff
     ImGui::SFML::Render(window);
 
     window.display();
 }
 
-void Tri::State::draw_to_target(sf::RenderTarget *target, bool draw_points) {
+void Tri::State::draw_to_target(sf::RenderTarget *target) {
     target->clear(bgColor);
 
     // draw tris
     for(unsigned int i = 0; i < trisIndex; ++i) {
         target->draw(tris[i]);
-    }
-
-    // draw points
-    if(draw_points) {
-        for(unsigned int i = 0; i < currentTri_state; ++i) {
-            pointCircle.setPosition(currentTri[i]);
-            target->draw(pointCircle);
-        }
     }
 }
 
@@ -280,7 +277,7 @@ bool Tri::State::do_save() {
         return false;
     }
 
-    draw_to_target(&saveTexture, false);
+    draw_to_target(&saveTexture);
     saveTexture.display();
 
     sf::Image saveImage = saveTexture.getTexture().copyToImage();

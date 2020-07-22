@@ -61,7 +61,7 @@ namespace Tri {
         void draw();
 
     private:
-        void draw_to_target(sf::RenderTarget *target, bool draw_points = true);
+        void draw_to_target(sf::RenderTarget *target);
 
     public:
         unsigned int get_width() const;
