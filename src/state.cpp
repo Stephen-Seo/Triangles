@@ -21,7 +21,8 @@ starting_help_alpha(1.0f),
 window(sf::VideoMode(800, 600), "Triangles", sf::Style::Titlebar | sf::Style::Close),
 trisIndex(0),
 currentTri_state(CurrentState::NONE),
-currentTri_maxState(CurrentState::NONE)
+currentTri_maxState(CurrentState::NONE),
+colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f}
 {
     flags.set(1); // is running
     ImGui::SFML::Init(window);
@@ -93,39 +94,43 @@ void Tri::State::handle_events() {
                         break;
                     }
                 }
+            } else if(event.key.code == sf::Keyboard::C) {
+                flags.flip(2);
             }
         } else if(event.type == sf::Event::MouseButtonPressed) {
-            switch(currentTri_state) {
-            case CurrentState::NONE:
-                currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                if(trisIndex < tris.size()) {
-                    tris.resize(trisIndex);
+            if(!flags.test(2)) {
+                switch(currentTri_state) {
+                case CurrentState::NONE:
+                    currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    if(trisIndex < tris.size()) {
+                        tris.resize(trisIndex);
+                    }
+                    currentTri_state = CurrentState::FIRST;
+                    currentTri_maxState = CurrentState::FIRST;
+                    break;
+                case CurrentState::FIRST:
+                    currentTri[1] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    if(trisIndex < tris.size()) {
+                        tris.resize(trisIndex);
+                    }
+                    currentTri_state = CurrentState::SECOND;
+                    currentTri_maxState = CurrentState::SECOND;
+                    break;
+                case CurrentState::SECOND:
+                    currentTri[2] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                    if(trisIndex < tris.size()) {
+                        tris.resize(trisIndex);
+                    }
+                    ++trisIndex;
+                    tris.emplace_back(sf::ConvexShape(3));
+                    tris.back().setPoint(0, currentTri[0]);
+                    tris.back().setPoint(1, currentTri[1]);
+                    tris.back().setPoint(2, currentTri[2]);
+                    tris.back().setFillColor(pointCircle.getFillColor());
+                    currentTri_state = CurrentState::NONE;
+                    currentTri_maxState = CurrentState::NONE;
+                    break;
                 }
-                currentTri_state = CurrentState::FIRST;
-                currentTri_maxState = CurrentState::FIRST;
-                break;
-            case CurrentState::FIRST:
-                currentTri[1] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                if(trisIndex < tris.size()) {
-                    tris.resize(trisIndex);
-                }
-                currentTri_state = CurrentState::SECOND;
-                currentTri_maxState = CurrentState::SECOND;
-                break;
-            case CurrentState::SECOND:
-                currentTri[2] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                if(trisIndex < tris.size()) {
-                    tris.resize(trisIndex);
-                }
-                ++trisIndex;
-                tris.emplace_back(sf::ConvexShape(3));
-                tris.back().setPoint(0, currentTri[0]);
-                tris.back().setPoint(1, currentTri[1]);
-                tris.back().setPoint(2, currentTri[2]);
-                tris.back().setFillColor(sf::Color::White); // TODO use chosen color
-                currentTri_state = CurrentState::NONE;
-                currentTri_maxState = CurrentState::NONE;
-                break;
             }
         }
     }
@@ -141,8 +146,18 @@ void Tri::State::update() {
         }
     }
 
+    if(flags.test(3)) {
+        flags.reset(3);
+        pointCircle.setFillColor(sf::Color(
+            (unsigned char)(255 * colorPickerColor[0]),
+            (unsigned char)(255 * colorPickerColor[1]),
+            (unsigned char)(255 * colorPickerColor[2]),
+            (unsigned char)(255 * colorPickerColor[3])));
+    }
+
     // Seems misleading, but imgui handles setting up the window during update
     Tri::draw_show_help(this);
+    Tri::draw_color_picker(this);
     Tri::draw_help(this);
 
     ImGui::EndFrame();
@@ -182,4 +197,9 @@ const Tri::State::BitsetType Tri::State::get_flags() const {
 
 float Tri::State::get_starting_help_alpha() const {
     return starting_help_alpha;
+}
+
+float* Tri::State::get_color() {
+    flags.set(3);
+    return colorPickerColor;
 }

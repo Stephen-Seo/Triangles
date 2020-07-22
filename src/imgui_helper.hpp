@@ -23,10 +23,11 @@ namespace Tri {
                 state->get_height() - 20.0f));
             ImGui::SetNextWindowBgAlpha(0.7f);
             ImGui::Begin("Help Window", nullptr, ImGuiWindowFlags_NoDecoration);
-            ImGui::Text("This is the help window. Press \"H\" to toggle this window.");
+            ImGui::Text("This is the help window - Press \"H\" to toggle this window");
             ImGui::Text("Click anywhere to create triangles, one point at a time");
             ImGui::Text("Press \"U\" to undo. Clicking will remove all future undo history");
             ImGui::Text("Press \"R\" to undo.");
+            ImGui::Text("Press \"C\" to change colors");
             ImGui::End();
         }
     }
@@ -48,6 +49,14 @@ namespace Tri {
             ImGui::End();
 
             ImGui::PopStyleVar();
+        }
+    }
+
+    inline void draw_color_picker(Tri::State *state) {
+        if(state->get_flags().test(2)) {
+            ImGui::Begin("Color Picker");
+            ImGui::ColorPicker4("Tri Color", state->get_color());
+            ImGui::End();
         }
     }
 }

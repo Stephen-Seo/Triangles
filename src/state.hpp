@@ -18,6 +18,8 @@ namespace Tri {
         /*
          * 0 - display help
          * 1 - is running
+         * 2 - display color picker
+         * 3 - color picker color dirty
          */
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
@@ -36,6 +38,8 @@ namespace Tri {
 
         sf::Event event;
 
+        float colorPickerColor[4];
+
     public:
         void handle_events();
         void update();
@@ -47,6 +51,8 @@ namespace Tri {
         const BitsetType get_flags() const;
 
         float get_starting_help_alpha() const;
+
+        float* get_color();
     };
 }
 
