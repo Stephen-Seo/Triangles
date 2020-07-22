@@ -11,6 +11,7 @@ width(800),
 height(600),
 dt(sf::microseconds(16666)),
 window(sf::VideoMode(800, 600), "Triangles", sf::Style::Titlebar | sf::Style::Close),
+trisIndex(0),
 currentTri_state(CurrentState::NONE)
 {
     flags.set(1); // is running
@@ -38,6 +39,14 @@ void Tri::State::handle_events() {
         } else if(event.type == sf::Event::KeyPressed) {
             if(event.key.code == sf::Keyboard::H) {
                 flags.flip(0);
+            } else if(event.key.code == sf::Keyboard::U) {
+                if(trisIndex > 0) {
+                    --trisIndex;
+                }
+            } else if(event.key.code == sf::Keyboard::R) {
+                if(tris.size() > trisIndex) {
+                    ++trisIndex;
+                }
             }
         } else if(event.type == sf::Event::MouseButtonPressed) {
             switch(currentTri_state) {
@@ -51,6 +60,10 @@ void Tri::State::handle_events() {
                 break;
             case CurrentState::SECOND:
                 currentTri[2] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                if(trisIndex < tris.size()) {
+                    tris.resize(trisIndex);
+                }
+                ++trisIndex;
                 tris.emplace_back(sf::ConvexShape(3));
                 tris.back().setPoint(0, currentTri[0]);
                 tris.back().setPoint(1, currentTri[1]);
@@ -77,8 +90,8 @@ void Tri::State::draw() {
     ImGui::SFML::Render(window);
 
     // draw tris
-    for(auto& tri : tris) {
-        window.draw(tri);
+    for(unsigned int i = 0; i < trisIndex; ++i) {
+        window.draw(tris[i]);
     }
 
     // draw points
