@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.0)
 project(Triangles LANGUAGES CXX VERSION 1.0)
 
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui)
-    message(FATAL_ERROR "third_party/imgui is missing!\nPlease update the \
-GameDevTools submodule by running 'git submodule init' and 'git submodule \
-update'!")
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui.h)
+    message(FATAL_ERROR "third_party/imgui/imgui.h is missing!\n \
+Please update the GameDevTools submodule by running 'git submodule init' and \
+'git submodule update'!")
 endif()
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui-sfml)
-    message(FATAL_ERROR "third_party/imgui-sfml is missing!\nPlease update the \
-GameDevTools submodule by running 'git submodule init' and 'git submodule \
-update'!")
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui-sfml/imgui-SFML.h)
+    message(FATAL_ERROR "third_party/imgui-sfml/imgui-SFML.h is missing!\n \
+Please update the GameDevTools submodule by running 'git submodule init' and \
+'git submodule update'!")
 endif()
 
 set(ImGuiDemo "")
