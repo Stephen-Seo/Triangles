@@ -114,8 +114,14 @@ void Tri::State::handle_events() {
                     }
                 } else if(event.key.code == sf::Keyboard::C) {
                     flags.flip(2);
+                    if(!flags.test(2)) {
+                        flags.set(7);
+                    }
                 } else if(event.key.code == sf::Keyboard::B) {
                     flags.flip(5);
+                    if(!flags.test(5)) {
+                        flags.set(7);
+                    }
                 } else if(event.key.code == sf::Keyboard::S) {
                     flags.flip(6);
                 }
@@ -302,5 +308,5 @@ void Tri::State::close_save() {
 }
 
 bool Tri::State::is_in_clickable_menu() const {
-    return flags.test(2) || flags.test(5) || flags.test(6);
+    return flags.test(0) || flags.test(2) || flags.test(5) || flags.test(6);
 }

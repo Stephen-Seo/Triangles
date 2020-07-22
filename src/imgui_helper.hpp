@@ -25,6 +25,7 @@ namespace Tri {
             ImGui::Begin("Help Window", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
             ImGui::Text("This is the help window - Press \"H\" to toggle this window");
             ImGui::Text("Click anywhere to create triangles, one point at a time");
+            ImGui::Text("You cannot draw when a window is open");
             ImGui::Text("Press \"U\" to undo. Clicking will remove all future undo history");
             ImGui::Text("Press \"R\" to undo.");
             ImGui::Text("Press \"C\" to change colors");
