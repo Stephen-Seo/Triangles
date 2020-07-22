@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <cassert>
+#include <string>
 
 #include <imgui-SFML.h>
 
@@ -35,6 +36,8 @@ bgColor(sf::Color::Black)
     pointCircle.setFillColor(sf::Color::White);
     pointCircle.setOutlineColor(sf::Color::Black);
     pointCircle.setOutlineThickness(1.0f);
+
+    saveFilenameBuffer.fill(0);
 }
 
 Tri::State::~State() {
@@ -49,60 +52,64 @@ void Tri::State::handle_events() {
             window.close();
             flags.reset(1);
         } else if(event.type == sf::Event::KeyPressed) {
-            if(event.key.code == sf::Keyboard::H) {
-                flags.flip(0);
-            } else if(event.key.code == sf::Keyboard::U) {
-                if(currentTri_state > 0) {
-                    switch(currentTri_state) {
-                    case FIRST:
-                        currentTri_state = CurrentState::NONE;
-                        break;
-                    case SECOND:
-                        currentTri_state = CurrentState::FIRST;
-                        break;
-                    default:
-                        assert(!"Unreachable code");
-                        break;
+            if(!flags.test(6)) {
+                if(event.key.code == sf::Keyboard::H) {
+                    flags.flip(0);
+                } else if(event.key.code == sf::Keyboard::U) {
+                    if(currentTri_state > 0) {
+                        switch(currentTri_state) {
+                        case FIRST:
+                            currentTri_state = CurrentState::NONE;
+                            break;
+                        case SECOND:
+                            currentTri_state = CurrentState::FIRST;
+                            break;
+                        default:
+                            assert(!"Unreachable code");
+                            break;
+                        }
+                    } else if(trisIndex > 0) {
+                        --trisIndex;
                     }
-                } else if(trisIndex > 0) {
-                    --trisIndex;
+                } else if(event.key.code == sf::Keyboard::R) {
+                    if(currentTri_state != CurrentState::NONE
+                            && currentTri_state < currentTri_maxState) {
+                        switch(currentTri_state) {
+                        case NONE:
+                            currentTri_state = CurrentState::FIRST;
+                            break;
+                        case FIRST:
+                            currentTri_state = CurrentState::SECOND;
+                            break;
+                        default:
+                            assert(!"Unreachable code");
+                            break;
+                        }
+                    } else if(tris.size() > trisIndex) {
+                        ++trisIndex;
+                    } else if(currentTri_state < currentTri_maxState) {
+                        switch(currentTri_state) {
+                        case NONE:
+                            currentTri_state = CurrentState::FIRST;
+                            break;
+                        case FIRST:
+                            currentTri_state = CurrentState::SECOND;
+                            break;
+                        default:
+                            assert(!"Unreachable code");
+                            break;
+                        }
+                    }
+                } else if(event.key.code == sf::Keyboard::C) {
+                    flags.flip(2);
+                } else if(event.key.code == sf::Keyboard::B) {
+                    flags.flip(5);
+                } else if(event.key.code == sf::Keyboard::S) {
+                    flags.flip(6);
                 }
-            } else if(event.key.code == sf::Keyboard::R) {
-                if(currentTri_state != CurrentState::NONE
-                        && currentTri_state < currentTri_maxState) {
-                    switch(currentTri_state) {
-                    case NONE:
-                        currentTri_state = CurrentState::FIRST;
-                        break;
-                    case FIRST:
-                        currentTri_state = CurrentState::SECOND;
-                        break;
-                    default:
-                        assert(!"Unreachable code");
-                        break;
-                    }
-                } else if(tris.size() > trisIndex) {
-                    ++trisIndex;
-                } else if(currentTri_state < currentTri_maxState) {
-                    switch(currentTri_state) {
-                    case NONE:
-                        currentTri_state = CurrentState::FIRST;
-                        break;
-                    case FIRST:
-                        currentTri_state = CurrentState::SECOND;
-                        break;
-                    default:
-                        assert(!"Unreachable code");
-                        break;
-                    }
-                }
-            } else if(event.key.code == sf::Keyboard::C) {
-                flags.flip(2);
-            } else if(event.key.code == sf::Keyboard::B) {
-                flags.flip(5);
             }
         } else if(event.type == sf::Event::MouseButtonPressed) {
-            if(!flags.test(2) && !flags.test(5)) {
+            if(!flags.test(2) && !flags.test(5) && !flags.test(6)) {
                 switch(currentTri_state) {
                 case CurrentState::NONE:
                     currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
@@ -170,29 +177,36 @@ void Tri::State::update() {
     Tri::draw_show_help(this);
     Tri::draw_color_picker(this);
     Tri::draw_bg_color_picker(this);
+    Tri::draw_save(this);
     Tri::draw_help(this);
 
     ImGui::EndFrame();
 }
 
 void Tri::State::draw() {
-    window.clear(bgColor);
-
-    // draw tris
-    for(unsigned int i = 0; i < trisIndex; ++i) {
-        window.draw(tris[i]);
-    }
-
-    // draw points
-    for(unsigned int i = 0; i < currentTri_state; ++i) {
-        pointCircle.setPosition(currentTri[i]);
-        window.draw(pointCircle);
-    }
+    draw_to_target(&window);
 
     // draw gui stuff
     ImGui::SFML::Render(window);
 
     window.display();
+}
+
+void Tri::State::draw_to_target(sf::RenderTarget *target, bool draw_points) {
+    target->clear(bgColor);
+
+    // draw tris
+    for(unsigned int i = 0; i < trisIndex; ++i) {
+        target->draw(tris[i]);
+    }
+
+    // draw points
+    if(draw_points) {
+        for(unsigned int i = 0; i < currentTri_state; ++i) {
+            pointCircle.setPosition(currentTri[i]);
+            target->draw(pointCircle);
+        }
+    }
 }
 
 unsigned int Tri::State::get_width() const {
@@ -219,4 +233,46 @@ float* Tri::State::get_color() {
 float* Tri::State::get_bg_color() {
     flags.set(4);
     return bgColorPickerColor;
+}
+
+Tri::State::FilenameBufferType* Tri::State::get_save_filename_buffer() {
+    return &saveFilenameBuffer;
+}
+
+bool Tri::State::do_save() {
+    sf::RenderTexture saveTexture;
+    if(!saveTexture.create(width, height)) {
+#ifndef NDEBUG
+        puts("ERROR: Failed to create texture for saving");
+#endif
+        failedSaveMessage = std::string("Failed to create texture for saving");
+        return false;
+    }
+
+    draw_to_target(&saveTexture, false);
+    saveTexture.display();
+
+    sf::Image saveImage = saveTexture.getTexture().copyToImage();
+    std::string filename = std::string(saveFilenameBuffer.data());
+    if(saveImage.saveToFile(filename)) {
+#ifndef NDEBUG
+        printf("Saved to \"%s\"\n", filename.c_str());
+#endif
+        failedSaveMessage.clear();
+        return true;
+    } else {
+#ifndef NDEBUG
+        printf("ERROR: Failed to save \"%s\"\n", filename.c_str());
+#endif
+        failedSaveMessage = std::string("Failed to save (does the name end in \".png\"?)");
+        return false;
+    }
+}
+
+std::string_view Tri::State::failed_save_message() const {
+    return failedSaveMessage;
+}
+
+void Tri::State::close_save() {
+    flags.reset(6);
 }

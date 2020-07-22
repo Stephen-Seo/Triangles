@@ -29,6 +29,7 @@ namespace Tri {
             ImGui::Text("Press \"R\" to undo.");
             ImGui::Text("Press \"C\" to change colors");
             ImGui::Text("Press \"B\" to change background color");
+            ImGui::Text("Press \"S\" to save what was drawn as a png image");
             ImGui::End();
         }
     }
@@ -65,6 +66,26 @@ namespace Tri {
         if(state->get_flags().test(5)) {
             ImGui::Begin("BG Color Picker");
             ImGui::ColorPicker3("BG Color", state->get_bg_color());
+            ImGui::End();
+        }
+    }
+
+    inline void draw_save(Tri::State *state) {
+        if(state->get_flags().test(6)) {
+            auto *filenameBuffer = state->get_save_filename_buffer();
+            ImGui::Begin("Save");
+            ImGui::InputText("Filename", filenameBuffer->data(), filenameBuffer->size() - 1);
+            if(ImGui::Button("Save")) {
+                if(state->do_save()) {
+                    state->close_save();
+                }
+            } else if(ImGui::Button("Cancel")) {
+                state->close_save();
+            }
+            auto string_view = state->failed_save_message();
+            if(!string_view.empty()) {
+                ImGui::TextUnformatted(string_view.data(), string_view.data() + string_view.size());
+            }
             ImGui::End();
         }
     }

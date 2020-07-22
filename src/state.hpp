@@ -3,6 +3,7 @@
 
 #include <bitset>
 #include <vector>
+#include <array>
 
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
@@ -22,6 +23,7 @@ namespace Tri {
          * 3 - color picker color dirty
          * 4 - bg color picker color dirty
          * 5 - display bg color picker
+         * 6 - draw save
          */
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
@@ -44,11 +46,19 @@ namespace Tri {
         float bgColorPickerColor[3];
         sf::Color bgColor;
 
+        typedef std::array<char, 256> FilenameBufferType;
+        FilenameBufferType saveFilenameBuffer;
+        std::string failedSaveMessage;
+
     public:
         void handle_events();
         void update();
         void draw();
 
+    private:
+        void draw_to_target(sf::RenderTarget *target, bool draw_points = true);
+
+    public:
         unsigned int get_width() const;
         unsigned int get_height() const;
 
@@ -58,6 +68,11 @@ namespace Tri {
 
         float* get_color();
         float* get_bg_color();
+
+        FilenameBufferType* get_save_filename_buffer();
+        bool do_save();
+        std::string_view failed_save_message() const;
+        void close_save();
     };
 }
 
