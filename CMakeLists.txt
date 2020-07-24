@@ -51,7 +51,7 @@ target_link_libraries(Triangles
 target_include_directories(Triangles PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${SFML_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include # imgui related headers
+    ${CMAKE_CURRENT_SOURCE_DIR}/build_include # imgui related headers
 )
 # Use macro to override imgui config header
 target_compile_definitions(Triangles PRIVATE
