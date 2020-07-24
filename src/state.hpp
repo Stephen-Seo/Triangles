@@ -81,6 +81,12 @@ namespace Tri {
 
     private:
         bool is_in_clickable_menu() const;
+
+    public:
+        void close_help();
+        void close_color_picker();
+        void close_bg_color_picker();
+
     };
 }
 

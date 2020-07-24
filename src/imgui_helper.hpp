@@ -27,10 +27,13 @@ namespace Tri {
             ImGui::Text("Click anywhere to create triangles, one point at a time");
             ImGui::Text("You cannot draw when a window is open");
             ImGui::Text("Press \"U\" to undo. Clicking will remove all future undo history");
-            ImGui::Text("Press \"R\" to undo.");
+            ImGui::Text("Press \"R\" to redo.");
             ImGui::Text("Press \"C\" to change colors");
             ImGui::Text("Press \"B\" to change background color");
             ImGui::Text("Press \"S\" to save what was drawn as a png image");
+            if(ImGui::Button("Close")) {
+                state->close_help();
+            }
             ImGui::End();
         }
     }
@@ -59,6 +62,9 @@ namespace Tri {
         if(state->get_flags().test(2)) {
             ImGui::Begin("Tri Color Picker");
             ImGui::ColorPicker4("Tri Color", state->get_color());
+            if(ImGui::Button("Close")) {
+                state->close_color_picker();
+            }
             ImGui::End();
         }
     }
@@ -67,6 +73,9 @@ namespace Tri {
         if(state->get_flags().test(5)) {
             ImGui::Begin("BG Color Picker");
             ImGui::ColorPicker3("BG Color", state->get_bg_color());
+            if(ImGui::Button("Close")) {
+                state->close_bg_color_picker();
+            }
             ImGui::End();
         }
     }
