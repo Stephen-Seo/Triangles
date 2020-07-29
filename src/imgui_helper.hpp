@@ -30,6 +30,7 @@ namespace Tri {
             ImGui::Text("Press \"R\" to redo.");
             ImGui::Text("Press \"C\" to change colors");
             ImGui::Text("Press \"B\" to change background color");
+            ImGui::Text("Press \"P\" to set current color to a color on screen");
             ImGui::Text("Press \"S\" to save what was drawn as a png image");
             if(ImGui::Button("Close")) {
                 state->close_help();
@@ -38,8 +39,8 @@ namespace Tri {
         }
     }
 
-    inline void draw_show_help(Tri::State *state) {
-        float alpha = state->get_starting_help_alpha();
+    inline void draw_notification(Tri::State *state) {
+        float alpha = state->get_notification_alpha();
         if(alpha > 0.0f) {
             ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
 
@@ -49,9 +50,12 @@ namespace Tri {
             ImGui::SetNextWindowSize(sf::Vector2f(
                 SHOW_HELP_WIDTH,
                 SHOW_HELP_HEIGHT));
-            ImGui::Begin("Use Help Window", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
+            ImGui::Begin(
+                "Notification Window",
+                nullptr,
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
             ImGui::SetWindowFontScale(3.0f);
-            ImGui::Text("Press \"H\" for help");
+            ImGui::Text("%s", state->get_notification_text());
             ImGui::End();
 
             ImGui::PopStyleVar();

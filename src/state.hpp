@@ -26,13 +26,16 @@ namespace Tri {
          * 6 - draw save
          * 7 - draw cache dirty
          * 8 - draw cache initialized
+         * 9 - copy color mode
          */
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
         unsigned int width;
         unsigned int height;
         const sf::Time dt;
-        float starting_help_alpha;
+        float notification_alpha;
+        typedef std::array<char, 64> NotificationBufferType;
+        NotificationBufferType notification_text;
 
         sf::RenderWindow window;
         std::vector<sf::ConvexShape> tris;
@@ -69,7 +72,8 @@ namespace Tri {
 
         const BitsetType get_flags() const;
 
-        float get_starting_help_alpha() const;
+        float get_notification_alpha() const;
+        const char* get_notification_text() const;
 
         float* get_color();
         float* get_bg_color();
@@ -80,7 +84,7 @@ namespace Tri {
         void close_save();
 
     private:
-        bool is_in_clickable_menu() const;
+        bool can_draw() const;
 
     public:
         void close_help();

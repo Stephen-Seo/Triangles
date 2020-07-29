@@ -18,7 +18,7 @@ Tri::State::State(int argc, char **argv) :
 width(800),
 height(600),
 dt(sf::microseconds(16666)),
-starting_help_alpha(1.0f),
+notification_alpha(1.0f),
 window(sf::VideoMode(800, 600), "Triangles", sf::Style::Titlebar | sf::Style::Close),
 trisIndex(0),
 currentTri_state(CurrentState::NONE),
@@ -30,6 +30,9 @@ bgColor(sf::Color::Black)
     flags.set(1); // is running
     ImGui::SFML::Init(window);
     window.setFramerateLimit(60);
+
+    notification_text.fill(0);
+    std::strcpy(notification_text.data(), "Press \"H\" for help");
 
     pointCircle.setRadius(7.0f);
     pointCircle.setOrigin(7.0f, 7.0f);
@@ -127,10 +130,24 @@ void Tri::State::handle_events() {
                     }
                 } else if(event.key.code == sf::Keyboard::S) {
                     flags.flip(6);
+                } else if(event.key.code == sf::Keyboard::P) {
+                    flags.flip(9);
+                    if(flags.test(9)) {
+                        notification_text.fill(0);
+                        std::strcpy(notification_text.data(),
+                            "Copy color mode\n"
+                            "Click to change\n"
+                            "current draw color\n"
+                            "to what was\n"
+                            "clicked on");
+                        notification_alpha = 1.0f;
+                    } else {
+                        notification_alpha = 0.0f;
+                    }
                 }
             }
         } else if(event.type == sf::Event::MouseButtonPressed) {
-            if(!is_in_clickable_menu()) {
+            if(can_draw()) {
                 switch(currentTri_state) {
                 case CurrentState::NONE:
                     currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
@@ -164,6 +181,18 @@ void Tri::State::handle_events() {
                     flags.set(7);
                     break;
                 }
+            } else if(flags.test(9)) {
+                auto color = drawCache.getTexture().copyToImage().getPixel(event.mouseButton.x, event.mouseButton.y);
+                colorPickerColor[0] = color.r / 255.0f;
+                colorPickerColor[1] = color.g / 255.0f;
+                colorPickerColor[2] = color.b / 255.0f;
+                colorPickerColor[3] = 1.0f;
+                pointCircle.setFillColor(color);
+                flags.reset(9);
+                notification_text.fill(0);
+                std::strcpy(notification_text.data(),
+                    "Color set");
+                notification_alpha = 1.0f;
             }
         }
     }
@@ -172,10 +201,10 @@ void Tri::State::handle_events() {
 void Tri::State::update() {
     ImGui::SFML::Update(window, dt);
 
-    if(starting_help_alpha > 0.0f) {
-        starting_help_alpha -= dt.asSeconds() * STARTING_HELP_FADE_RATE;
-        if(starting_help_alpha < 0.0f) {
-            starting_help_alpha = 0.0f;
+    if(notification_alpha > 0.0f) {
+        notification_alpha -= dt.asSeconds() * STARTING_HELP_FADE_RATE;
+        if(notification_alpha < 0.0f) {
+            notification_alpha = 0.0f;
         }
     }
 
@@ -196,7 +225,7 @@ void Tri::State::update() {
     }
 
     // Seems misleading, but imgui handles setting up the window during update
-    Tri::draw_show_help(this);
+    Tri::draw_notification(this);
     Tri::draw_color_picker(this);
     Tri::draw_bg_color_picker(this);
     Tri::draw_save(this);
@@ -251,8 +280,12 @@ const Tri::State::BitsetType Tri::State::get_flags() const {
     return flags;
 }
 
-float Tri::State::get_starting_help_alpha() const {
-    return starting_help_alpha;
+float Tri::State::get_notification_alpha() const {
+    return notification_alpha;
+}
+
+const char* Tri::State::get_notification_text() const {
+    return notification_text.data();
 }
 
 float* Tri::State::get_color() {
@@ -307,8 +340,12 @@ void Tri::State::close_save() {
     flags.reset(6);
 }
 
-bool Tri::State::is_in_clickable_menu() const {
-    return flags.test(0) || flags.test(2) || flags.test(5) || flags.test(6);
+bool Tri::State::can_draw() const {
+    return !flags.test(0)
+        && !flags.test(2)
+        && !flags.test(5)
+        && !flags.test(6)
+        && !flags.test(9);
 }
 
 void Tri::State::close_help() {
