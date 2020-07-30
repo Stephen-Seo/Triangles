@@ -25,7 +25,8 @@ currentTri_state(CurrentState::NONE),
 currentTri_maxState(CurrentState::NONE),
 colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f},
 bgColorPickerColor{0.0f, 0.0f, 0.0f},
-bgColor(sf::Color::Black)
+bgColor(sf::Color::Black),
+inputWidthHeight{800, 600}
 {
     flags.set(1); // is running
     ImGui::SFML::Init(window);
@@ -67,6 +68,7 @@ void Tri::State::handle_events() {
             flags.reset(1);
         } else if(event.type == sf::Event::KeyPressed) {
             if(!flags.test(6)) {
+                // TODO use a switch statement
                 if(event.key.code == sf::Keyboard::H) {
                     flags.flip(0);
                 } else if(event.key.code == sf::Keyboard::U) {
@@ -143,6 +145,12 @@ void Tri::State::handle_events() {
                         notification_alpha = 1.0f;
                     } else {
                         notification_alpha = 0.0f;
+                    }
+                } else if(event.key.code == sf::Keyboard::I) {
+                    flags.flip(10);
+                    if(!flags.test(10)) {
+                        inputWidthHeight[0] = width;
+                        inputWidthHeight[1] = height;
                     }
                 }
             }
@@ -228,6 +236,7 @@ void Tri::State::update() {
     Tri::draw_notification(this);
     Tri::draw_color_picker(this);
     Tri::draw_bg_color_picker(this);
+    Tri::draw_change_size(this);
     Tri::draw_save(this);
     Tri::draw_help(this);
 
@@ -308,7 +317,7 @@ bool Tri::State::do_save() {
 #ifndef NDEBUG
         puts("ERROR: Failed to create texture for saving");
 #endif
-        failedSaveMessage = std::string("Failed to create texture for saving");
+        failedMessage = std::string("Failed to create texture for saving");
         return false;
     }
 
@@ -321,19 +330,19 @@ bool Tri::State::do_save() {
 #ifndef NDEBUG
         printf("Saved to \"%s\"\n", filename.c_str());
 #endif
-        failedSaveMessage.clear();
+        failedMessage.clear();
         return true;
     } else {
 #ifndef NDEBUG
         printf("ERROR: Failed to save \"%s\"\n", filename.c_str());
 #endif
-        failedSaveMessage = std::string("Failed to save (does the name end in \".png\"?)");
+        failedMessage = std::string("Failed to save (does the name end in \".png\"?)");
         return false;
     }
 }
 
-std::string_view Tri::State::failed_save_message() const {
-    return failedSaveMessage;
+std::string_view Tri::State::failed_message() const {
+    return failedMessage;
 }
 
 void Tri::State::close_save() {
@@ -345,7 +354,8 @@ bool Tri::State::can_draw() const {
         && !flags.test(2)
         && !flags.test(5)
         && !flags.test(6)
-        && !flags.test(9);
+        && !flags.test(9)
+        && !flags.test(10);
 }
 
 void Tri::State::close_help() {
@@ -360,4 +370,68 @@ void Tri::State::close_color_picker() {
 void Tri::State::close_bg_color_picker() {
     flags.reset(5);
     flags.set(7);
+}
+
+bool Tri::State::change_width_height() {
+    std::bitset<2> warnings;
+    if(inputWidthHeight[0] < 0 || inputWidthHeight[1] < 0) {
+        failedMessage = "Width or Height cannot be less than 0";
+        return false;
+    }
+    if(inputWidthHeight[0] < 200) {
+        inputWidthHeight[0] = 200;
+        warnings.set(0);
+    }
+    if(inputWidthHeight[1] < 150) {
+        inputWidthHeight[1] = 150;
+        warnings.set(1);
+    }
+
+    if(warnings.test(0) && warnings.test(1)) {
+        notification_alpha = 1.0f;
+        notification_text.fill(0);
+        std::strcpy(
+            notification_text.data(),
+            "Width set to 200\nHeight set to 150"
+        );
+    } else if(warnings.test(0)) {
+        notification_alpha = 1.0f;
+        notification_text.fill(0);
+        std::strcpy(
+            notification_text.data(),
+            "Width set to 200"
+        );
+    } else if(warnings.test(1)) {
+        notification_alpha = 1.0f;
+        notification_text.fill(0);
+        std::strcpy(
+            notification_text.data(),
+            "Height set to 150"
+        );
+    }
+
+    this->width = inputWidthHeight[0];
+    this->height = inputWidthHeight[1];
+
+    window.setSize(sf::Vector2u(width, height));
+    sf::View newView(
+        sf::Vector2f(width / 2.0f, height / 2.0f),
+        sf::Vector2f(width, height));
+    window.setView(newView);
+
+    drawCache.create(width, height);
+    drawCacheSprite.setTexture(drawCache.getTexture(), true);
+    flags.set(7);
+
+    currentTri_state = CurrentState::NONE;
+
+    return true;
+}
+
+int* Tri::State::get_input_width_height() {
+    return inputWidthHeight;
+}
+
+void Tri::State::close_input_width_height_window() {
+    flags.reset(10);
 }

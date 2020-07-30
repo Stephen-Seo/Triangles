@@ -27,6 +27,7 @@ namespace Tri {
          * 7 - draw cache dirty
          * 8 - draw cache initialized
          * 9 - copy color mode
+         * 10 - display change size
          */
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
@@ -53,10 +54,12 @@ namespace Tri {
 
         typedef std::array<char, 256> FilenameBufferType;
         FilenameBufferType saveFilenameBuffer;
-        std::string failedSaveMessage;
+        std::string failedMessage;
 
         sf::RenderTexture drawCache;
         sf::Sprite drawCacheSprite;
+
+        int inputWidthHeight[2];
 
     public:
         void handle_events();
@@ -80,7 +83,7 @@ namespace Tri {
 
         FilenameBufferType* get_save_filename_buffer();
         bool do_save();
-        std::string_view failed_save_message() const;
+        std::string_view failed_message() const;
         void close_save();
 
     private:
@@ -90,6 +93,10 @@ namespace Tri {
         void close_help();
         void close_color_picker();
         void close_bg_color_picker();
+
+        bool change_width_height();
+        int* get_input_width_height();
+        void close_input_width_height_window();
 
     };
 }

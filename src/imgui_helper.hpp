@@ -96,9 +96,29 @@ namespace Tri {
             } else if(ImGui::Button("Cancel")) {
                 state->close_save();
             }
-            auto string_view = state->failed_save_message();
+            auto string_view = state->failed_message();
             if(!string_view.empty()) {
                 ImGui::TextUnformatted(string_view.data(), string_view.data() + string_view.size());
+            }
+            ImGui::End();
+        }
+    }
+
+    inline void draw_change_size(Tri::State *state) {
+        if(state->get_flags().test(10)) {
+            ImGui::Begin("ChangeSize");
+            ImGui::InputInt2("Width and Height", state->get_input_width_height());
+            auto string_view = state->failed_message();
+            if(!string_view.empty()) {
+                ImGui::TextUnformatted(string_view.data(), string_view.data() + string_view.size());
+            }
+            if(ImGui::Button("Cancel")) {
+                state->close_input_width_height_window();
+            }
+            if(ImGui::Button("Set")) {
+                if(state->change_width_height()) {
+                    state->close_input_width_height_window();
+                }
             }
             ImGui::End();
         }
