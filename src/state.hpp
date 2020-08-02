@@ -16,19 +16,21 @@ namespace Tri {
 
         enum CurrentState {NONE = 0, FIRST = 1, SECOND = 2};
     private:
-        /*
-         * 0 - display help
-         * 1 - is running
-         * 2 - display color picker
-         * 3 - color picker color dirty
-         * 4 - bg color picker color dirty
-         * 5 - display bg color picker
-         * 6 - draw save
-         * 7 - draw cache dirty
-         * 8 - draw cache initialized
-         * 9 - copy color mode
-         * 10 - display change size
-         */
+        enum FlagName {
+            F_DISPLAY_HELP              = 0,
+            F_IS_RUNNING                = 1,
+            F_DISPLAY_COLOR_P           = 2,
+            F_COLOR_P_COLOR_DIRTY       = 3,
+            F_BG_COLOR_P_COLOR_DIRTY    = 4,
+            F_DISPLAY_BG_COLOR_P        = 5,
+            F_DISPLAY_SAVE              = 6,
+            F_DRAW_CACHE_DIRTY          = 7,
+            F_DRAW_CACHE_INITIALIZED    = 8,
+            F_COPY_COLOR_MODE           = 9,
+            F_DISPLAY_CHANGE_SIZE       = 10,
+        };
+
+        // use enum FlagName
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
         unsigned int width;

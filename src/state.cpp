@@ -28,7 +28,7 @@ bgColorPickerColor{0.0f, 0.0f, 0.0f},
 bgColor(sf::Color::Black),
 inputWidthHeight{800, 600}
 {
-    flags.set(1); // is running
+    flags.set(F_IS_RUNNING); // is running
     ImGui::SFML::Init(window);
     window.setFramerateLimit(60);
 
@@ -47,10 +47,10 @@ inputWidthHeight{800, 600}
 #ifndef NDEBUG
         puts("ERROR: Failed to initialize RenderTexture (draw cache)");
 #endif
-        flags.reset(8);
+        flags.reset(F_DRAW_CACHE_INITIALIZED);
     } else {
-        flags.set(8);
-        flags.set(7);
+        flags.set(F_DRAW_CACHE_INITIALIZED);
+        flags.set(F_DRAW_CACHE_DIRTY);
         drawCacheSprite.setTexture(drawCache.getTexture(), true);
     }
 }
@@ -65,14 +65,14 @@ void Tri::State::handle_events() {
         ImGui::SFML::ProcessEvent(event);
         if(event.type == sf::Event::Closed) {
             window.close();
-            flags.reset(1);
+            flags.reset(F_IS_RUNNING);
         } else if(event.type == sf::Event::KeyPressed) {
-            if(!flags.test(6)) {
+            if(!flags.test(F_DISPLAY_SAVE)) {
                 // TODO use a switch statement
                 if(event.key.code == sf::Keyboard::H) {
-                    flags.flip(0);
+                    flags.flip(F_DISPLAY_HELP);
                 } else if(event.key.code == sf::Keyboard::U) {
-                    flags.set(7);
+                    flags.set(F_DRAW_CACHE_DIRTY);
                     if(currentTri_state > 0) {
                         switch(currentTri_state) {
                         case FIRST:
@@ -89,7 +89,7 @@ void Tri::State::handle_events() {
                         --trisIndex;
                     }
                 } else if(event.key.code == sf::Keyboard::R) {
-                    flags.set(7);
+                    flags.set(F_DRAW_CACHE_DIRTY);
                     if(currentTri_state != CurrentState::NONE
                             && currentTri_state < currentTri_maxState) {
                         switch(currentTri_state) {
@@ -119,22 +119,22 @@ void Tri::State::handle_events() {
                         }
                     }
                 } else if(event.key.code == sf::Keyboard::C) {
-                    if(flags.test(2)) {
+                    if(flags.test(F_DISPLAY_COLOR_P)) {
                         close_color_picker();
                     } else {
-                        flags.set(2);
+                        flags.set(F_DISPLAY_COLOR_P);
                     }
                 } else if(event.key.code == sf::Keyboard::B) {
-                    if(flags.test(5)) {
+                    if(flags.test(F_DISPLAY_BG_COLOR_P)) {
                         close_bg_color_picker();
                     } else {
-                        flags.set(5);
+                        flags.set(F_DISPLAY_BG_COLOR_P);
                     }
                 } else if(event.key.code == sf::Keyboard::S) {
-                    flags.flip(6);
+                    flags.flip(F_DISPLAY_SAVE);
                 } else if(event.key.code == sf::Keyboard::P) {
-                    flags.flip(9);
-                    if(flags.test(9)) {
+                    flags.flip(F_COPY_COLOR_MODE);
+                    if(flags.test(F_COPY_COLOR_MODE)) {
                         notification_text.fill(0);
                         std::strcpy(notification_text.data(),
                             "Copy color mode\n"
@@ -147,8 +147,8 @@ void Tri::State::handle_events() {
                         notification_alpha = 0.0f;
                     }
                 } else if(event.key.code == sf::Keyboard::I) {
-                    flags.flip(10);
-                    if(!flags.test(10)) {
+                    flags.flip(F_DISPLAY_CHANGE_SIZE);
+                    if(!flags.test(F_DISPLAY_CHANGE_SIZE)) {
                         inputWidthHeight[0] = width;
                         inputWidthHeight[1] = height;
                     }
@@ -186,17 +186,17 @@ void Tri::State::handle_events() {
                     tris.back().setFillColor(pointCircle.getFillColor());
                     currentTri_state = CurrentState::NONE;
                     currentTri_maxState = CurrentState::NONE;
-                    flags.set(7);
+                    flags.set(F_DRAW_CACHE_DIRTY);
                     break;
                 }
-            } else if(flags.test(9)) {
+            } else if(flags.test(F_COPY_COLOR_MODE)) {
                 auto color = drawCache.getTexture().copyToImage().getPixel(event.mouseButton.x, event.mouseButton.y);
                 colorPickerColor[0] = color.r / 255.0f;
                 colorPickerColor[1] = color.g / 255.0f;
                 colorPickerColor[2] = color.b / 255.0f;
                 colorPickerColor[3] = 1.0f;
                 pointCircle.setFillColor(color);
-                flags.reset(9);
+                flags.reset(F_COPY_COLOR_MODE);
                 notification_text.fill(0);
                 std::strcpy(notification_text.data(),
                     "Color set");
@@ -216,8 +216,8 @@ void Tri::State::update() {
         }
     }
 
-    if(flags.test(3)) {
-        flags.reset(3);
+    if(flags.test(F_COLOR_P_COLOR_DIRTY)) {
+        flags.reset(F_COLOR_P_COLOR_DIRTY);
         pointCircle.setFillColor(sf::Color(
             (unsigned char)(255 * colorPickerColor[0]),
             (unsigned char)(255 * colorPickerColor[1]),
@@ -225,8 +225,8 @@ void Tri::State::update() {
             (unsigned char)(255 * colorPickerColor[3])));
     }
 
-    if(flags.test(4)) {
-        flags.reset(4);
+    if(flags.test(F_BG_COLOR_P_COLOR_DIRTY)) {
+        flags.reset(F_BG_COLOR_P_COLOR_DIRTY);
         bgColor.r = (unsigned char)(255 * bgColorPickerColor[0]);
         bgColor.g = (unsigned char)(255 * bgColorPickerColor[1]);
         bgColor.b = (unsigned char)(255 * bgColorPickerColor[2]);
@@ -244,11 +244,11 @@ void Tri::State::update() {
 }
 
 void Tri::State::draw() {
-    if(flags.test(8)) {
+    if(flags.test(F_DRAW_CACHE_INITIALIZED)) {
         // draw cache initialized
-        if(flags.test(7)) {
+        if(flags.test(F_DRAW_CACHE_DIRTY)) {
             // draw cache dirty
-            flags.reset(7);
+            flags.reset(F_DRAW_CACHE_DIRTY);
             draw_to_target(&drawCache);
             drawCache.display();
         }
@@ -298,12 +298,12 @@ const char* Tri::State::get_notification_text() const {
 }
 
 float* Tri::State::get_color() {
-    flags.set(3);
+    flags.set(F_COLOR_P_COLOR_DIRTY);
     return colorPickerColor;
 }
 
 float* Tri::State::get_bg_color() {
-    flags.set(4);
+    flags.set(F_BG_COLOR_P_COLOR_DIRTY);
     return bgColorPickerColor;
 }
 
@@ -346,30 +346,30 @@ std::string_view Tri::State::failed_message() const {
 }
 
 void Tri::State::close_save() {
-    flags.reset(6);
+    flags.reset(F_DISPLAY_SAVE);
 }
 
 bool Tri::State::can_draw() const {
-    return !flags.test(0)
-        && !flags.test(2)
-        && !flags.test(5)
-        && !flags.test(6)
-        && !flags.test(9)
-        && !flags.test(10);
+    return !flags.test(F_DISPLAY_HELP)
+        && !flags.test(F_DISPLAY_COLOR_P)
+        && !flags.test(F_DISPLAY_BG_COLOR_P)
+        && !flags.test(F_DISPLAY_SAVE)
+        && !flags.test(F_COPY_COLOR_MODE)
+        && !flags.test(F_DISPLAY_CHANGE_SIZE);
 }
 
 void Tri::State::close_help() {
-    flags.reset(0);
+    flags.reset(F_DISPLAY_HELP);
 }
 
 void Tri::State::close_color_picker() {
-    flags.reset(2);
-    flags.set(7);
+    flags.reset(F_DISPLAY_COLOR_P);
+    flags.set(F_DRAW_CACHE_DIRTY);
 }
 
 void Tri::State::close_bg_color_picker() {
-    flags.reset(5);
-    flags.set(7);
+    flags.reset(F_DISPLAY_BG_COLOR_P);
+    flags.set(F_DRAW_CACHE_DIRTY);
 }
 
 bool Tri::State::change_width_height() {
@@ -380,11 +380,11 @@ bool Tri::State::change_width_height() {
     }
     if(inputWidthHeight[0] < 200) {
         inputWidthHeight[0] = 200;
-        warnings.set(0);
+        warnings.set(F_DISPLAY_HELP);
     }
     if(inputWidthHeight[1] < 150) {
         inputWidthHeight[1] = 150;
-        warnings.set(1);
+        warnings.set(F_IS_RUNNING);
     }
 
     if(warnings.test(0) && warnings.test(1)) {
@@ -421,7 +421,7 @@ bool Tri::State::change_width_height() {
 
     drawCache.create(width, height);
     drawCacheSprite.setTexture(drawCache.getTexture(), true);
-    flags.set(7);
+    flags.set(F_DRAW_CACHE_DIRTY);
 
     currentTri_state = CurrentState::NONE;
 
@@ -433,5 +433,5 @@ int* Tri::State::get_input_width_height() {
 }
 
 void Tri::State::close_input_width_height_window() {
-    flags.reset(10);
+    flags.reset(F_DISPLAY_CHANGE_SIZE);
 }
