@@ -37,7 +37,7 @@ namespace Tri {
         unsigned int height;
         const sf::Time dt;
         float notification_alpha;
-        typedef std::array<char, 64> NotificationBufferType;
+        typedef std::array<char, 256> NotificationBufferType;
         NotificationBufferType notification_text;
 
         sf::RenderWindow window;

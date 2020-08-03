@@ -33,7 +33,7 @@ inputWidthHeight{800, 600}
     window.setFramerateLimit(60);
 
     notification_text.fill(0);
-    std::strcpy(notification_text.data(), "Press \"H\" for help");
+    std::strncpy(notification_text.data(), "Press \"H\" for help", notification_text.max_size() - 1);
 
     pointCircle.setRadius(7.0f);
     pointCircle.setOrigin(7.0f, 7.0f);
@@ -136,12 +136,13 @@ void Tri::State::handle_events() {
                     flags.flip(F_COPY_COLOR_MODE);
                     if(flags.test(F_COPY_COLOR_MODE)) {
                         notification_text.fill(0);
-                        std::strcpy(notification_text.data(),
+                        std::strncpy(notification_text.data(),
                             "Copy color mode\n"
                             "Click to change\n"
                             "current draw color\n"
                             "to what was\n"
-                            "clicked on");
+                            "clicked on",
+                            notification_text.max_size() - 1);
                         notification_alpha = 1.0f;
                     } else {
                         notification_alpha = 0.0f;
@@ -190,7 +191,8 @@ void Tri::State::handle_events() {
                     break;
                 }
             } else if(flags.test(F_COPY_COLOR_MODE)) {
-                auto color = drawCache.getTexture().copyToImage().getPixel(event.mouseButton.x, event.mouseButton.y);
+                auto color = drawCache.getTexture().copyToImage()
+                    .getPixel(event.mouseButton.x, event.mouseButton.y);
                 colorPickerColor[0] = color.r / 255.0f;
                 colorPickerColor[1] = color.g / 255.0f;
                 colorPickerColor[2] = color.b / 255.0f;
@@ -198,8 +200,9 @@ void Tri::State::handle_events() {
                 pointCircle.setFillColor(color);
                 flags.reset(F_COPY_COLOR_MODE);
                 notification_text.fill(0);
-                std::strcpy(notification_text.data(),
-                    "Color set");
+                std::strncpy(notification_text.data(),
+                    "Color set",
+                    notification_text.max_size() - 1);
                 notification_alpha = 1.0f;
             }
         }
@@ -390,30 +393,33 @@ bool Tri::State::change_width_height() {
     if(warnings.test(0) && warnings.test(1)) {
         notification_alpha = 1.0f;
         notification_text.fill(0);
-        std::strcpy(
+        std::strncpy(
             notification_text.data(),
-            "Width set to 200\nHeight set to 150"
+            "Width set to 200\nHeight set to 150",
+            notification_text.max_size() - 1
         );
     } else if(warnings.test(0)) {
         notification_alpha = 1.0f;
         notification_text.fill(0);
-        std::strcpy(
+        std::strncpy(
             notification_text.data(),
-            "Width set to 200"
+            "Width set to 200",
+            notification_text.max_size() - 1
         );
     } else if(warnings.test(1)) {
         notification_alpha = 1.0f;
         notification_text.fill(0);
-        std::strcpy(
+        std::strncpy(
             notification_text.data(),
-            "Height set to 150"
+            "Height set to 150",
+            notification_text.max_size() - 1
         );
     }
 
     this->width = inputWidthHeight[0];
     this->height = inputWidthHeight[1];
 
-    window.setSize(sf::Vector2u(width, height));
+    window.setSize({this->width, this->height});
     sf::View newView(
         sf::Vector2f(width / 2.0f, height / 2.0f),
         sf::Vector2f(width, height));
