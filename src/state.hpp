@@ -1,6 +1,8 @@
 #ifndef TRIANGLES_STATE_HPP
 #define TRIANGLES_STATE_HPP
 
+#define TRIANGLES_EDIT_TRI_BLINK_RATE 2.0f
+
 #include <bitset>
 #include <vector>
 #include <array>
@@ -15,7 +17,6 @@ namespace Tri {
         ~State();
 
         enum CurrentState {NONE = 0, FIRST = 1, SECOND = 2};
-    private:
         enum FlagName {
             F_DISPLAY_HELP              = 0,
             F_IS_RUNNING                = 1,
@@ -28,8 +29,12 @@ namespace Tri {
             F_DRAW_CACHE_INITIALIZED    = 8,
             F_COPY_COLOR_MODE           = 9,
             F_DISPLAY_CHANGE_SIZE       = 10,
+            F_SELECT_TRI_MODE           = 11,
+            F_TRI_EDIT_MODE             = 12,
+            F_TRI_EDIT_DRAW_TRI         = 13,
         };
 
+    private:
         // use enum FlagName
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
@@ -63,6 +68,12 @@ namespace Tri {
 
         int inputWidthHeight[2];
 
+        const float pi;
+
+        unsigned int selectedTri;
+        float selectedTriColor[4];
+        float selectedTriBlinkTimer;
+
     public:
         void handle_events();
         void update();
@@ -80,6 +91,10 @@ namespace Tri {
         float get_notification_alpha() const;
         const char* get_notification_text() const;
 
+    private:
+        void set_notification_text(const char *text);
+
+    public:
         float* get_color();
         float* get_bg_color();
 
@@ -90,6 +105,7 @@ namespace Tri {
 
     private:
         bool can_draw() const;
+        void reset_modes();
 
     public:
         void close_help();
@@ -99,6 +115,11 @@ namespace Tri {
         bool change_width_height();
         int* get_input_width_height();
         void close_input_width_height_window();
+
+        float get_pi() const;
+
+        float* get_selected_tri_color();
+        void close_selected_tri_mode();
 
     };
 }

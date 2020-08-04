@@ -3,10 +3,11 @@
 #include <cstring>
 #include <cassert>
 #include <string>
+#include <cmath>
 
 #include <imgui-SFML.h>
 
-#include "imgui_helper.hpp"
+#include "helpers.hpp"
 
 #define STARTING_HELP_FADE_RATE 0.2f
 
@@ -26,14 +27,14 @@ currentTri_maxState(CurrentState::NONE),
 colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f},
 bgColorPickerColor{0.0f, 0.0f, 0.0f},
 bgColor(sf::Color::Black),
-inputWidthHeight{800, 600}
+inputWidthHeight{800, 600},
+pi(std::acos(-1.0f))
 {
     flags.set(F_IS_RUNNING); // is running
     ImGui::SFML::Init(window);
     window.setFramerateLimit(60);
 
-    notification_text.fill(0);
-    std::strncpy(notification_text.data(), "Press \"H\" for help", notification_text.max_size() - 1);
+    set_notification_text("Press \"H\" for help");
 
     pointCircle.setRadius(7.0f);
     pointCircle.setOrigin(7.0f, 7.0f);
@@ -135,15 +136,12 @@ void Tri::State::handle_events() {
                 } else if(event.key.code == sf::Keyboard::P) {
                     flags.flip(F_COPY_COLOR_MODE);
                     if(flags.test(F_COPY_COLOR_MODE)) {
-                        notification_text.fill(0);
-                        std::strncpy(notification_text.data(),
+                        set_notification_text(
                             "Copy color mode\n"
                             "Click to change\n"
                             "current draw color\n"
                             "to what was\n"
-                            "clicked on",
-                            notification_text.max_size() - 1);
-                        notification_alpha = 1.0f;
+                            "clicked on");
                     } else {
                         notification_alpha = 0.0f;
                     }
@@ -152,6 +150,15 @@ void Tri::State::handle_events() {
                     if(!flags.test(F_DISPLAY_CHANGE_SIZE)) {
                         inputWidthHeight[0] = width;
                         inputWidthHeight[1] = height;
+                    }
+                } else if(event.key.code == sf::Keyboard::E) {
+                    if(flags.test(F_TRI_EDIT_MODE)) {
+                        close_selected_tri_mode();
+                    } else {
+                        flags.flip(F_SELECT_TRI_MODE);
+                        if(flags.test(F_SELECT_TRI_MODE)) {
+                            set_notification_text("Click on a tri\nto edit it");
+                        }
                     }
                 }
             }
@@ -199,11 +206,28 @@ void Tri::State::handle_events() {
                 colorPickerColor[3] = 1.0f;
                 pointCircle.setFillColor(color);
                 flags.reset(F_COPY_COLOR_MODE);
-                notification_text.fill(0);
-                std::strncpy(notification_text.data(),
-                    "Color set",
-                    notification_text.max_size() - 1);
-                notification_alpha = 1.0f;
+                set_notification_text("Color set");
+            } else if(flags.test(F_SELECT_TRI_MODE)) {
+                sf::Vector2f mouseXY = window.mapPixelToCoords(
+                    {event.mouseButton.x, event.mouseButton.y});
+                for(unsigned int i = trisIndex; i-- > 0; ) {
+                    if(is_within_shape(tris.at(i), mouseXY)) {
+                        selectedTri = i;
+                        tris[i].setOutlineColor(invert_color(tris[i].getFillColor()));
+                        flags.reset(F_SELECT_TRI_MODE);
+                        flags.set(F_TRI_EDIT_MODE);
+                        flags.set(F_TRI_EDIT_DRAW_TRI);
+                        selectedTriBlinkTimer = 1.0f;
+                        selectedTriColor[0] = tris[i].getFillColor().r / 255.0f;
+                        selectedTriColor[1] = tris[i].getFillColor().g / 255.0f;
+                        selectedTriColor[2] = tris[i].getFillColor().b / 255.0f;
+                        selectedTriColor[3] = tris[i].getFillColor().a / 255.0f;
+                        break;
+                    }
+                }
+                if(!flags.test(F_TRI_EDIT_MODE)) {
+                    set_notification_text("Did not select\nanything");
+                }
             }
         }
     }
@@ -235,10 +259,19 @@ void Tri::State::update() {
         bgColor.b = (unsigned char)(255 * bgColorPickerColor[2]);
     }
 
+    if(flags.test(F_TRI_EDIT_MODE)) {
+        selectedTriBlinkTimer -= dt.asSeconds() * TRIANGLES_EDIT_TRI_BLINK_RATE;
+        if(selectedTriBlinkTimer <= 0.0f) {
+            selectedTriBlinkTimer = 1.0f;
+            flags.flip(F_TRI_EDIT_DRAW_TRI);
+        }
+    }
+
     // Seems misleading, but imgui handles setting up the window during update
     Tri::draw_notification(this);
     Tri::draw_color_picker(this);
     Tri::draw_bg_color_picker(this);
+    Tri::draw_edit_tri(this);
     Tri::draw_change_size(this);
     Tri::draw_save(this);
     Tri::draw_help(this);
@@ -260,9 +293,17 @@ void Tri::State::draw() {
         draw_to_target(&window);
     }
 
-    for(unsigned int i = 0; i < currentTri_state; ++i) {
-        pointCircle.setPosition(currentTri[i]);
-        window.draw(pointCircle);
+    if(flags.test(F_TRI_EDIT_MODE) && flags.test(F_TRI_EDIT_DRAW_TRI)) {
+        tris.at(selectedTri).setOutlineThickness(4.0f);
+        window.draw(tris[selectedTri]);
+        tris.at(selectedTri).setOutlineThickness(0.0f);
+    }
+
+    if(can_draw()) {
+        for(unsigned int i = 0; i < currentTri_state; ++i) {
+            pointCircle.setPosition(currentTri[i]);
+            window.draw(pointCircle);
+        }
     }
 
     // draw gui stuff
@@ -298,6 +339,14 @@ float Tri::State::get_notification_alpha() const {
 
 const char* Tri::State::get_notification_text() const {
     return notification_text.data();
+}
+
+void Tri::State::set_notification_text(const char *text) {
+    notification_text.fill(0);
+    std::strncpy(notification_text.data(),
+        text,
+        notification_text.max_size() - 1);
+    notification_alpha = 1.0f;
 }
 
 float* Tri::State::get_color() {
@@ -358,7 +407,20 @@ bool Tri::State::can_draw() const {
         && !flags.test(F_DISPLAY_BG_COLOR_P)
         && !flags.test(F_DISPLAY_SAVE)
         && !flags.test(F_COPY_COLOR_MODE)
-        && !flags.test(F_DISPLAY_CHANGE_SIZE);
+        && !flags.test(F_DISPLAY_CHANGE_SIZE)
+        && !flags.test(F_SELECT_TRI_MODE)
+        && !flags.test(F_TRI_EDIT_MODE);
+}
+
+void Tri::State::reset_modes() {
+    flags.reset(F_DISPLAY_HELP);
+    flags.reset(F_DISPLAY_COLOR_P);
+    flags.reset(F_DISPLAY_BG_COLOR_P);
+    flags.reset(F_DISPLAY_SAVE);
+    flags.reset(F_COPY_COLOR_MODE);
+    flags.reset(F_DISPLAY_CHANGE_SIZE);
+    flags.reset(F_SELECT_TRI_MODE);
+    flags.reset(F_TRI_EDIT_MODE);
 }
 
 void Tri::State::close_help() {
@@ -391,29 +453,11 @@ bool Tri::State::change_width_height() {
     }
 
     if(warnings.test(0) && warnings.test(1)) {
-        notification_alpha = 1.0f;
-        notification_text.fill(0);
-        std::strncpy(
-            notification_text.data(),
-            "Width set to 200\nHeight set to 150",
-            notification_text.max_size() - 1
-        );
+        set_notification_text("Width set to 200\nHeight set to 150");
     } else if(warnings.test(0)) {
-        notification_alpha = 1.0f;
-        notification_text.fill(0);
-        std::strncpy(
-            notification_text.data(),
-            "Width set to 200",
-            notification_text.max_size() - 1
-        );
+        set_notification_text("Width set to 200");
     } else if(warnings.test(1)) {
-        notification_alpha = 1.0f;
-        notification_text.fill(0);
-        std::strncpy(
-            notification_text.data(),
-            "Height set to 150",
-            notification_text.max_size() - 1
-        );
+        set_notification_text("Height set to 150");
     }
 
     this->width = inputWidthHeight[0];
@@ -440,4 +484,27 @@ int* Tri::State::get_input_width_height() {
 
 void Tri::State::close_input_width_height_window() {
     flags.reset(F_DISPLAY_CHANGE_SIZE);
+}
+
+float Tri::State::get_pi() const {
+    return pi;
+}
+
+float* Tri::State::get_selected_tri_color() {
+    tris.at(selectedTri).setFillColor(sf::Color(
+        (unsigned char)(255.0f * selectedTriColor[0]),
+        (unsigned char)(255.0f * selectedTriColor[1]),
+        (unsigned char)(255.0f * selectedTriColor[2]),
+        (unsigned char)(255.0f * selectedTriColor[3])));
+    return selectedTriColor;
+}
+
+void Tri::State::close_selected_tri_mode() {
+    tris.at(selectedTri).setFillColor(sf::Color(
+        (unsigned char)(255.0f * selectedTriColor[0]),
+        (unsigned char)(255.0f * selectedTriColor[1]),
+        (unsigned char)(255.0f * selectedTriColor[2]),
+        (unsigned char)(255.0f * selectedTriColor[3])));
+    flags.set(F_DRAW_CACHE_DIRTY);
+    reset_modes();
 }

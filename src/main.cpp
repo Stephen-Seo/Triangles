@@ -6,7 +6,6 @@
 #include <imgui-SFML.h>
 
 #include "state.hpp"
-#include "imgui_helper.hpp"
 
 int main(int argc, char **argv) {
     // init
