@@ -34,19 +34,29 @@ set(Triangles_LIB_SOURCES
     third_party/imgui-sfml/imgui-SFML.cpp
 )
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wsuggest-override")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -D NDEBUG")
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi")
+	set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DNDEBUG")
+else()
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wsuggest-override")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -D NDEBUG")
+endif()
 
 add_library(TrianglesLib STATIC ${Triangles_LIB_SOURCES})
 
-add_executable(Triangles ${Triangles_MAIN_SOURCES})
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    add_executable(Triangles WIN32 ${Triangles_MAIN_SOURCES})
+else()
+    add_executable(Triangles ${Triangles_MAIN_SOURCES})
+endif()
 
 target_link_libraries(Triangles PUBLIC TrianglesLib)
 
 target_compile_features(TrianglesLib PUBLIC cxx_std_17)
 
-if(BUILD_SHARED_LIBS OR (UNIX AND NOT CYGWIN))
+if(BUILD_SHARED_LIBS OR (UNIX AND NOT CYGWIN) OR (CMAKE_CXX_COMPILER_ID MATCHES "MSVC"))
     find_package(SFML 2 REQUIRED
         COMPONENTS audio network graphics window system)
 else()
@@ -55,10 +65,17 @@ else()
     add_definitions(-DSFML_STATIC)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+target_link_libraries(TrianglesLib PUBLIC
+    sfml-graphics sfml-window sfml-system
+    opengl32
+)
+else()
 target_link_libraries(TrianglesLib PUBLIC
     sfml-graphics sfml-window sfml-system
     GL
 )
+endif()
 
 target_include_directories(TrianglesLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
