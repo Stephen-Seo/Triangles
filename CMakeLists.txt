@@ -77,13 +77,23 @@ target_link_libraries(TrianglesLib PUBLIC
 )
 endif()
 
-target_include_directories(TrianglesLib PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${SFML_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/build_include # imgui related headers
-)
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    target_include_directories(TrianglesLib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${SFML_INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui # imgui related headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui-sfml # imgui-sfml related headers
+    )
+else()
+    target_include_directories(TrianglesLib PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${SFML_INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/build_include # imgui related headers
+    )
+endif()
+
 # Use macro to override imgui config header
-target_compile_definitions(TrianglesLib PRIVATE
+target_compile_definitions(TrianglesLib PUBLIC
     "IMGUI_USER_CONFIG=\"${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui-sfml/imconfig-SFML.h\"")
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
