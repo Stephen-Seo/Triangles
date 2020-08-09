@@ -23,6 +23,9 @@ and should be initialized with `git submodule update --init --recursive`.
 
 # Legal stuff
 
+Uses [SFML](https://github.com/SFML/SFML), which is licensed under the
+[SFML license](https://github.com/SFML/SFML/blob/master/license.md).
+
 Uses [imgui](https://github.com/ocornut/imgui), which is licensed under the
 [MIT](https://choosealicense.com/licenses/mit/) license.
 
