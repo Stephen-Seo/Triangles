@@ -15,20 +15,19 @@
 # include <cstdio>
 #endif
 
-Tri::State::State(int argc, char **argv) :
+Tri::State::State(int /*argc*/, char ** /*argv*/) :
 width(800),
 height(600),
 dt(sf::microseconds(16666)),
 notification_alpha(1.0f),
 window(sf::VideoMode(800, 600), "Triangles", sf::Style::Titlebar | sf::Style::Close),
-trisIndex(0),
 currentTri_state(CurrentState::NONE),
-currentTri_maxState(CurrentState::NONE),
 colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f},
 bgColorPickerColor{0.0f, 0.0f, 0.0f},
 bgColor(sf::Color::Black),
 inputWidthHeight{800, 600},
-pi(std::acos(-1.0f))
+pi(std::acos(-1.0f)),
+history_idx(0)
 {
     flags.set(F_IS_RUNNING); // is running
     ImGui::SFML::Init(window);
@@ -56,6 +55,50 @@ pi(std::acos(-1.0f))
     }
 }
 
+Tri::State::Action::Action() :
+type(Tri::State::Action::AT_NONE),
+idx(0),
+color(sf::Color::Black),
+data{{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}}
+{}
+
+Tri::State::Action::Action(const Type& type, IndexT idx, const sf::Color& color, float *data) :
+type(type),
+idx(idx),
+color(color)
+{
+    init(data);
+}
+
+Tri::State::Action::Action(Type&& type, IndexT idx, sf::Color&& color, float *data) :
+type(type),
+idx(idx),
+color(color)
+{
+    init(data);
+}
+
+void Tri::State::Action::init(float *data) {
+    switch(type) {
+    case AT_TRI:
+    case AT_TRI_DEL:
+        for(unsigned int i = 0; i < 6; ++i) {
+            this->data.tri[i] = data[i];
+        }
+        break;
+    case AT_POINT:
+        this->data.point[0] = data[0];
+        this->data.point[1] = data[1];
+        break;
+    default:
+        type = AT_NONE;
+        idx = 0;
+        color = sf::Color::Black;
+        this->data = {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
+        break;
+    }
+}
+
 Tri::State::~State() {
     window.close();
     ImGui::SFML::Shutdown();
@@ -74,50 +117,88 @@ void Tri::State::handle_events() {
                     flags.flip(F_DISPLAY_HELP);
                 } else if(event.key.code == sf::Keyboard::U) {
                     flags.set(F_DRAW_CACHE_DIRTY);
-                    if(currentTri_state > 0) {
-                        switch(currentTri_state) {
-                        case FIRST:
+                    if(history_idx > 0) {
+                        switch(history[history_idx-1].type) {
+                        case Action::AT_TRI:
+                            tris.erase(
+                                tris.cbegin() + history[history_idx-1].idx);
+                            restore_points_on_tri_del(history_idx - 1);
+                            break;
+                        case Action::AT_TRI_DEL:
+                        {
+                            tris.emplace(
+                                tris.cbegin() + history[history_idx-1].idx,
+                                sf::ConvexShape(3));
+                            tris[history[history_idx-1].idx].setPoint(0, sf::Vector2f(
+                                history[history_idx-1].data.tri[0],
+                                history[history_idx-1].data.tri[1]));
+                            tris[history[history_idx-1].idx].setPoint(1, sf::Vector2f(
+                                history[history_idx-1].data.tri[2],
+                                history[history_idx-1].data.tri[3]));
+                            tris[history[history_idx-1].idx].setPoint(2, sf::Vector2f(
+                                history[history_idx-1].data.tri[4],
+                                history[history_idx-1].data.tri[5]));
+                            tris[history[history_idx-1].idx].setFillColor(history[history_idx-1].color);
                             currentTri_state = CurrentState::NONE;
                             break;
-                        case SECOND:
-                            currentTri_state = CurrentState::FIRST;
+                        }
+                        case Action::AT_POINT:
+                            assert(history[history_idx-1].idx + 1 == currentTri_state
+                                && "Point in history must match point index");
+                            assert(currentTri_state > 0
+                                && "There must be a point to undo a point");
+                            currentTri_state = static_cast<CurrentState>(currentTri_state - 1);
                             break;
                         default:
                             assert(!"Unreachable code");
                             break;
                         }
-                    } else if(trisIndex > 0) {
-                        --trisIndex;
+                        --history_idx;
                     }
                 } else if(event.key.code == sf::Keyboard::R) {
                     flags.set(F_DRAW_CACHE_DIRTY);
-                    if(currentTri_state != CurrentState::NONE
-                            && currentTri_state < currentTri_maxState) {
-                        switch(currentTri_state) {
-                        case NONE:
-                            currentTri_state = CurrentState::FIRST;
+                    if(history_idx < history.size()) {
+                        switch(history[history_idx].type) {
+                        case Action::AT_TRI:
+                        {
+                            tris.emplace(
+                                tris.cbegin() + history[history_idx].idx,
+                                sf::ConvexShape(3));
+                            tris[history[history_idx].idx].setPoint(0, sf::Vector2f(
+                                history[history_idx].data.tri[0],
+                                history[history_idx].data.tri[1]));
+                            tris[history[history_idx].idx].setPoint(1, sf::Vector2f(
+                                history[history_idx].data.tri[2],
+                                history[history_idx].data.tri[3]));
+                            tris[history[history_idx].idx].setPoint(2, sf::Vector2f(
+                                history[history_idx].data.tri[4],
+                                history[history_idx].data.tri[5]));
+                            tris[history[history_idx].idx].setFillColor(history[history_idx].color);
+                            currentTri_state = CurrentState::NONE;
                             break;
-                        case FIRST:
-                            currentTri_state = CurrentState::SECOND;
+                        }
+                            break;
+                        case Action::AT_TRI_DEL:
+                            tris.erase(
+                                tris.cbegin() + history[history_idx].idx);
+                            restore_points_on_tri_del(history_idx);
+                            break;
+                        case Action::AT_POINT:
+                            assert(history[history_idx].idx == currentTri_state
+                                && "Point in history must match point index");
+                            assert(currentTri_state < CurrentState::SECOND
+                                && "Current point state must be 0 or 1");
+                            currentTri[currentTri_state].x = history[history_idx].data.point[0];
+                            currentTri[currentTri_state].y = history[history_idx].data.point[1];
+                            currentTri_state = static_cast<CurrentState>(
+                                currentTri_state + 1);
+                            pointCircle.setFillColor(history[history_idx].color);
                             break;
                         default:
                             assert(!"Unreachable code");
                             break;
                         }
-                    } else if(tris.size() > trisIndex) {
-                        ++trisIndex;
-                    } else if(currentTri_state < currentTri_maxState) {
-                        switch(currentTri_state) {
-                        case NONE:
-                            currentTri_state = CurrentState::FIRST;
-                            break;
-                        case FIRST:
-                            currentTri_state = CurrentState::SECOND;
-                            break;
-                        default:
-                            assert(!"Unreachable code");
-                            break;
-                        }
+                        ++history_idx;
                     }
                 } else if(event.key.code == sf::Keyboard::C) {
                     if(flags.test(F_DISPLAY_COLOR_P)) {
@@ -166,36 +247,63 @@ void Tri::State::handle_events() {
             if(can_draw()) {
                 switch(currentTri_state) {
                 case CurrentState::NONE:
+                {
                     currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                    if(trisIndex < tris.size()) {
-                        tris.resize(trisIndex);
-                    }
                     currentTri_state = CurrentState::FIRST;
-                    currentTri_maxState = CurrentState::FIRST;
+
+                    if(history_idx < history.size()) {
+                        history.resize(history_idx);
+                    }
+                    float points[2] = {currentTri[0].x, currentTri[0].y};
+                    history.push_back(Action(Action::AT_POINT,
+                                             0,
+                                             pointCircle.getFillColor(),
+                                             points));
+                    ++history_idx;
                     break;
+                }
                 case CurrentState::FIRST:
+                {
                     currentTri[1] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                    if(trisIndex < tris.size()) {
-                        tris.resize(trisIndex);
-                    }
                     currentTri_state = CurrentState::SECOND;
-                    currentTri_maxState = CurrentState::SECOND;
-                    break;
-                case CurrentState::SECOND:
-                    currentTri[2] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                    if(trisIndex < tris.size()) {
-                        tris.resize(trisIndex);
+
+                    if(history_idx < history.size()) {
+                        history.resize(history_idx);
                     }
-                    ++trisIndex;
+                    float points[2] = {currentTri[1].x, currentTri[1].y};
+                    history.push_back(Action(Action::AT_POINT,
+                                             1,
+                                             pointCircle.getFillColor(),
+                                             points));
+                    ++history_idx;
+                    break;
+                }
+                case CurrentState::SECOND:
+                {
+                    currentTri[2] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
                     tris.emplace_back(sf::ConvexShape(3));
                     tris.back().setPoint(0, currentTri[0]);
                     tris.back().setPoint(1, currentTri[1]);
                     tris.back().setPoint(2, currentTri[2]);
                     tris.back().setFillColor(pointCircle.getFillColor());
                     currentTri_state = CurrentState::NONE;
-                    currentTri_maxState = CurrentState::NONE;
                     flags.set(F_DRAW_CACHE_DIRTY);
+
+                    if(history_idx < history.size()) {
+                        history.resize(history_idx);
+                    }
+                    float points[6] = {
+                        currentTri[0].x, currentTri[0].y,
+                        currentTri[1].x, currentTri[1].y,
+                        currentTri[2].x, currentTri[2].y,
+                    };
+                    history.push_back(Action(Action::AT_TRI,
+                                             tris.size()-1,
+                                             pointCircle.getFillColor(),
+                                             points));
+                    ++history_idx;
                     break;
+                }
                 }
             } else if(flags.test(F_COPY_COLOR_MODE)) {
                 auto color = drawCache.getTexture().copyToImage()
@@ -210,7 +318,7 @@ void Tri::State::handle_events() {
             } else if(flags.test(F_SELECT_TRI_MODE)) {
                 sf::Vector2f mouseXY = window.mapPixelToCoords(
                     {event.mouseButton.x, event.mouseButton.y});
-                for(unsigned int i = trisIndex; i-- > 0; ) {
+                for(unsigned int i = tris.size(); i-- > 0; ) {
                     if(is_within_shape(tris.at(i), mouseXY)) {
                         selectedTri = i;
                         tris[i].setOutlineColor(invert_color(tris[i].getFillColor()));
@@ -316,7 +424,7 @@ void Tri::State::draw_to_target(sf::RenderTarget *target) {
     target->clear(bgColor);
 
     // draw tris
-    for(unsigned int i = 0; i < trisIndex; ++i) {
+    for(unsigned int i = 0; i < tris.size(); ++i) {
         target->draw(tris[i]);
     }
 }
@@ -507,4 +615,30 @@ void Tri::State::close_selected_tri_mode() {
         (unsigned char)(255.0f * selectedTriColor[3])));
     flags.set(F_DRAW_CACHE_DIRTY);
     reset_modes();
+}
+
+void Tri::State::restore_points_on_tri_del(Action::IndexT end) {
+    assert(end < history.size()
+        && "Index on history must be in range");
+    currentTri[2].x = history[end].data.tri[4];
+    currentTri[2].y = history[end].data.tri[5];
+    pointCircle.setFillColor(history[end].color);
+    unsigned int currentTriIdx = 1;
+    while(end-- > 0) {
+        if(history[end].type == Action::AT_POINT) {
+            assert(history[end].idx == currentTriIdx
+                && "Last point must be second point");
+            currentTri[currentTriIdx].x = history[end].data.point[0];
+            currentTri[currentTriIdx].y = history[end].data.point[1];
+            if(currentTriIdx > 0) {
+                --currentTriIdx;
+            } else {
+                currentTri_state = CurrentState::SECOND;
+                return;
+            }
+        }
+    }
+
+    assert(!"Unreachable code");
+    return;
 }

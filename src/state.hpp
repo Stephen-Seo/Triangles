@@ -35,6 +35,39 @@ namespace Tri {
         };
 
     private:
+        struct Action {
+        public:
+            typedef std::vector<Action>::size_type IndexT;
+
+            enum Type {
+                AT_TRI,
+                AT_TRI_DEL,
+                AT_POINT,
+                AT_NONE,
+            };
+
+            Action();
+            Action(const Type& type,
+                   IndexT idx,
+                   const sf::Color& color,
+                   float *data);
+            Action(Type&& type,
+                   IndexT idx,
+                   sf::Color&& color,
+                   float *data);
+
+            Type type;
+            IndexT idx;
+            sf::Color color;
+            union Data {
+                float tri[6];
+                float point[2];
+            } data;
+
+        private:
+            void init(float *data);
+        };
+
         // use enum FlagName
         typedef std::bitset<64> BitsetType;
         BitsetType flags;
@@ -47,10 +80,8 @@ namespace Tri {
 
         sf::RenderWindow window;
         std::vector<sf::ConvexShape> tris;
-        unsigned int trisIndex;
         sf::Vector2f currentTri[3];
         CurrentState currentTri_state;
-        CurrentState currentTri_maxState;
         sf::CircleShape pointCircle;
 
         sf::Event event;
@@ -73,6 +104,9 @@ namespace Tri {
         unsigned int selectedTri;
         float selectedTriColor[4];
         float selectedTriBlinkTimer;
+
+        std::vector<Action> history;
+        Action::IndexT history_idx;
 
     public:
         void handle_events();
@@ -120,6 +154,9 @@ namespace Tri {
 
         float* get_selected_tri_color();
         void close_selected_tri_mode();
+
+    private:
+        void restore_points_on_tri_del(Action::IndexT end);
 
     };
 }
