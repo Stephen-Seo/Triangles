@@ -5,7 +5,7 @@
 #include <string>
 #include <cmath>
 
-#include <imgui-SFML.h>
+#include <raylib.h>
 
 #include "helpers.hpp"
 
@@ -18,226 +18,245 @@
 Tri::State::State(int argc, char **argv) :
 width(800),
 height(600),
-dt(sf::microseconds(16666)),
+dt(1.0f/60.0f),
 notification_alpha(1.0f),
-window(sf::VideoMode(800, 600), "Triangles", sf::Style::Titlebar | sf::Style::Close),
 trisIndex(0),
 currentTri_state(CurrentState::NONE),
 currentTri_maxState(CurrentState::NONE),
 colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f},
 bgColorPickerColor{0.0f, 0.0f, 0.0f},
-bgColor(sf::Color::Black),
-inputWidthHeight{800, 600},
-pi(std::acos(-1.0f))
+bgColor(BLACK),
+pi(std::acos(-1.0f)),
+inputWidth(800),
+inputHeight(600)
 {
+    InitWindow(width, height, "Triangles");
+    SetTargetFPS(60);
+
     flags.set(F_IS_RUNNING); // is running
-    ImGui::SFML::Init(window);
-    window.setFramerateLimit(60);
 
     set_notification_text("Press \"H\" for help");
 
     pointCircle.setRadius(7.0f);
-    pointCircle.setOrigin(7.0f, 7.0f);
-    pointCircle.setFillColor(sf::Color::White);
-    pointCircle.setOutlineColor(sf::Color::Black);
-    pointCircle.setOutlineThickness(1.0f);
+    pointCircle.translate({7.0f, 7.0f});
+    pointCircle.fillColor = WHITE;
+    pointCircle.outlineColor = BLACK;
 
     saveFilenameBuffer.fill(0);
 
-    if(!drawCache.create(800, 600)) {
-#ifndef NDEBUG
-        puts("ERROR: Failed to initialize RenderTexture (draw cache)");
-#endif
-        flags.reset(F_DRAW_CACHE_INITIALIZED);
-    } else {
-        flags.set(F_DRAW_CACHE_INITIALIZED);
-        flags.set(F_DRAW_CACHE_DIRTY);
-        drawCacheSprite.setTexture(drawCache.getTexture(), true);
-    }
+    drawCache = LoadRenderTexture(width, height);
+    flags.set(F_DRAW_CACHE_INITIALIZED);
+    flags.set(F_DRAW_CACHE_DIRTY);
+
+    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x303030);
 }
 
 Tri::State::~State() {
-    window.close();
-    ImGui::SFML::Shutdown();
+    UnloadRenderTexture(drawCache);
+    CloseWindow();
 }
 
 void Tri::State::handle_events() {
-    while(window.pollEvent(event)) {
-        ImGui::SFML::ProcessEvent(event);
-        if(event.type == sf::Event::Closed) {
-            window.close();
-            flags.reset(F_IS_RUNNING);
-        } else if(event.type == sf::Event::KeyPressed) {
-            if(!flags.test(F_DISPLAY_SAVE)) {
-                // TODO use a switch statement
-                if(event.key.code == sf::Keyboard::H) {
-                    flags.flip(F_DISPLAY_HELP);
-                } else if(event.key.code == sf::Keyboard::U) {
-                    flags.set(F_DRAW_CACHE_DIRTY);
-                    if(currentTri_state > 0) {
-                        switch(currentTri_state) {
-                        case FIRST:
-                            currentTri_state = CurrentState::NONE;
-                            break;
-                        case SECOND:
-                            currentTri_state = CurrentState::FIRST;
-                            break;
-                        default:
-                            assert(!"Unreachable code");
-                            break;
-                        }
-                    } else if(trisIndex > 0) {
-                        --trisIndex;
+    if(WindowShouldClose()) {
+        flags.reset(F_IS_RUNNING);
+    }
+
+    int keyPressed = GetKeyPressed();
+    while(keyPressed > 0) {
+        if(!flags.test(F_DISPLAY_SAVE)) {
+            switch(keyPressed) {
+            case KEY_H:
+                flags.flip(F_DISPLAY_HELP);
+                break;
+            case KEY_U:
+                flags.set(F_DRAW_CACHE_DIRTY);
+                if(currentTri_state > 0) {
+                    switch(currentTri_state) {
+                    case FIRST:
+                        currentTri_state = CurrentState::NONE;
+                        break;
+                    case SECOND:
+                        currentTri_state = CurrentState::FIRST;
+                        break;
+                    default:
+                        assert(!"Unreachable code");
+                        break;
                     }
-                } else if(event.key.code == sf::Keyboard::R) {
-                    flags.set(F_DRAW_CACHE_DIRTY);
-                    if(currentTri_state != CurrentState::NONE
-                            && currentTri_state < currentTri_maxState) {
-                        switch(currentTri_state) {
-                        case NONE:
-                            currentTri_state = CurrentState::FIRST;
-                            break;
-                        case FIRST:
-                            currentTri_state = CurrentState::SECOND;
-                            break;
-                        default:
-                            assert(!"Unreachable code");
-                            break;
-                        }
-                    } else if(tris.size() > trisIndex) {
-                        ++trisIndex;
-                    } else if(currentTri_state < currentTri_maxState) {
-                        switch(currentTri_state) {
-                        case NONE:
-                            currentTri_state = CurrentState::FIRST;
-                            break;
-                        case FIRST:
-                            currentTri_state = CurrentState::SECOND;
-                            break;
-                        default:
-                            assert(!"Unreachable code");
-                            break;
-                        }
-                    }
-                } else if(event.key.code == sf::Keyboard::C) {
-                    if(flags.test(F_DISPLAY_COLOR_P)) {
-                        close_color_picker();
-                    } else {
-                        flags.set(F_DISPLAY_COLOR_P);
-                    }
-                } else if(event.key.code == sf::Keyboard::B) {
-                    if(flags.test(F_DISPLAY_BG_COLOR_P)) {
-                        close_bg_color_picker();
-                    } else {
-                        flags.set(F_DISPLAY_BG_COLOR_P);
-                    }
-                } else if(event.key.code == sf::Keyboard::S) {
-                    flags.flip(F_DISPLAY_SAVE);
-                } else if(event.key.code == sf::Keyboard::P) {
-                    flags.flip(F_COPY_COLOR_MODE);
-                    if(flags.test(F_COPY_COLOR_MODE)) {
-                        set_notification_text(
-                            "Copy color mode\n"
-                            "Click to change\n"
-                            "current draw color\n"
-                            "to what was\n"
-                            "clicked on");
-                    } else {
-                        notification_alpha = 0.0f;
-                    }
-                } else if(event.key.code == sf::Keyboard::I) {
-                    flags.flip(F_DISPLAY_CHANGE_SIZE);
-                    if(!flags.test(F_DISPLAY_CHANGE_SIZE)) {
-                        inputWidthHeight[0] = width;
-                        inputWidthHeight[1] = height;
-                    }
-                } else if(event.key.code == sf::Keyboard::E) {
-                    if(flags.test(F_TRI_EDIT_MODE)) {
-                        close_selected_tri_mode();
-                    } else {
-                        flags.flip(F_SELECT_TRI_MODE);
-                        if(flags.test(F_SELECT_TRI_MODE)) {
-                            set_notification_text("Click on a tri\nto edit it");
-                        }
-                    }
+                } else if(trisIndex > 0) {
+                    --trisIndex;
                 }
-            }
-        } else if(event.type == sf::Event::MouseButtonPressed) {
-            if(can_draw()) {
-                switch(currentTri_state) {
-                case CurrentState::NONE:
-                    currentTri[0] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                    if(trisIndex < tris.size()) {
-                        tris.resize(trisIndex);
+                break;
+            case KEY_R:
+                flags.set(F_DRAW_CACHE_DIRTY);
+                if(currentTri_state != CurrentState::NONE
+                        && currentTri_state < currentTri_maxState) {
+                    switch(currentTri_state) {
+                    case NONE:
+                        currentTri_state = CurrentState::FIRST;
+                        break;
+                    case FIRST:
+                        currentTri_state = CurrentState::SECOND;
+                        break;
+                    default:
+                        assert(!"Unreachable code");
+                        break;
                     }
-                    currentTri_state = CurrentState::FIRST;
-                    currentTri_maxState = CurrentState::FIRST;
-                    break;
-                case CurrentState::FIRST:
-                    currentTri[1] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                    if(trisIndex < tris.size()) {
-                        tris.resize(trisIndex);
-                    }
-                    currentTri_state = CurrentState::SECOND;
-                    currentTri_maxState = CurrentState::SECOND;
-                    break;
-                case CurrentState::SECOND:
-                    currentTri[2] = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
-                    if(trisIndex < tris.size()) {
-                        tris.resize(trisIndex);
-                    }
+                } else if(tris.size() > trisIndex) {
                     ++trisIndex;
-                    tris.emplace_back(sf::ConvexShape(3));
-                    tris.back().setPoint(0, currentTri[0]);
-                    tris.back().setPoint(1, currentTri[1]);
-                    tris.back().setPoint(2, currentTri[2]);
-                    tris.back().setFillColor(pointCircle.getFillColor());
-                    currentTri_state = CurrentState::NONE;
-                    currentTri_maxState = CurrentState::NONE;
-                    flags.set(F_DRAW_CACHE_DIRTY);
-                    break;
-                }
-            } else if(flags.test(F_COPY_COLOR_MODE)) {
-                auto color = drawCache.getTexture().copyToImage()
-                    .getPixel(event.mouseButton.x, event.mouseButton.y);
-                colorPickerColor[0] = color.r / 255.0f;
-                colorPickerColor[1] = color.g / 255.0f;
-                colorPickerColor[2] = color.b / 255.0f;
-                colorPickerColor[3] = 1.0f;
-                pointCircle.setFillColor(color);
-                flags.reset(F_COPY_COLOR_MODE);
-                set_notification_text("Color set");
-            } else if(flags.test(F_SELECT_TRI_MODE)) {
-                sf::Vector2f mouseXY = window.mapPixelToCoords(
-                    {event.mouseButton.x, event.mouseButton.y});
-                for(unsigned int i = trisIndex; i-- > 0; ) {
-                    if(is_within_shape(tris.at(i), mouseXY)) {
-                        selectedTri = i;
-                        tris[i].setOutlineColor(invert_color(tris[i].getFillColor()));
-                        flags.reset(F_SELECT_TRI_MODE);
-                        flags.set(F_TRI_EDIT_MODE);
-                        flags.set(F_TRI_EDIT_DRAW_TRI);
-                        selectedTriBlinkTimer = 1.0f;
-                        selectedTriColor[0] = tris[i].getFillColor().r / 255.0f;
-                        selectedTriColor[1] = tris[i].getFillColor().g / 255.0f;
-                        selectedTriColor[2] = tris[i].getFillColor().b / 255.0f;
-                        selectedTriColor[3] = tris[i].getFillColor().a / 255.0f;
+                } else if(currentTri_state < currentTri_maxState) {
+                    switch(currentTri_state) {
+                    case NONE:
+                        currentTri_state = CurrentState::FIRST;
+                        break;
+                    case FIRST:
+                        currentTri_state = CurrentState::SECOND;
+                        break;
+                    default:
+                        assert(!"Unreachable code");
                         break;
                     }
                 }
-                if(!flags.test(F_TRI_EDIT_MODE)) {
-                    set_notification_text("Did not select\nanything");
+                break;
+            case KEY_C:
+                if(flags.test(F_DISPLAY_COLOR_P)) {
+                    close_color_picker();
+                } else {
+                    flags.set(F_DISPLAY_COLOR_P);
                 }
+                break;
+            case KEY_B:
+                if(flags.test(F_DISPLAY_BG_COLOR_P)) {
+                    close_bg_color_picker();
+                } else {
+                    flags.set(F_DISPLAY_BG_COLOR_P);
+                }
+                break;
+            case KEY_S:
+                flags.flip(F_DISPLAY_SAVE);
+                break;
+            case KEY_P:
+                flags.flip(F_COPY_COLOR_MODE);
+                if(flags.test(F_COPY_COLOR_MODE)) {
+                    set_notification_text(
+                        "Copy color mode\n"
+                        "Click to change\n"
+                        "current draw color\n"
+                        "to what was\n"
+                        "clicked on");
+                } else {
+                    notification_alpha = 0.0f;
+                }
+                break;
+            case KEY_I:
+                flags.flip(F_DISPLAY_CHANGE_SIZE);
+                if(!flags.test(F_DISPLAY_CHANGE_SIZE)) {
+                    inputWidth = width;
+                    inputHeight = height;
+                }
+                break;
+            case KEY_E:
+                if(flags.test(F_TRI_EDIT_MODE)) {
+                    close_selected_tri_mode();
+                } else {
+                    flags.flip(F_SELECT_TRI_MODE);
+                    if(flags.test(F_SELECT_TRI_MODE)) {
+                        set_notification_text("Click on a tri\nto edit it");
+                    }
+                }
+                break;
+            }
+        }
+        keyPressed = GetKeyPressed();
+    }
+
+    if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if(can_draw()) {
+            switch(currentTri_state) {
+            case CurrentState::NONE:
+                currentTri[0] = {GetMouseX(), GetMouseY()};
+                if(trisIndex < tris.size()) {
+                    tris.resize(trisIndex);
+                }
+                currentTri_state = CurrentState::FIRST;
+                currentTri_maxState = CurrentState::FIRST;
+                break;
+            case CurrentState::FIRST:
+                currentTri[1] = {GetMouseX(), GetMouseY()};
+                if(trisIndex < tris.size()) {
+                    tris.resize(trisIndex);
+                }
+                currentTri_state = CurrentState::SECOND;
+                currentTri_maxState = CurrentState::SECOND;
+                break;
+            case CurrentState::SECOND:
+                currentTri[2] = {GetMouseX(), GetMouseY()};
+                if(trisIndex < tris.size()) {
+                    tris.resize(trisIndex);
+                }
+                ++trisIndex;
+                make_counter_clockwise(currentTri);
+                tris.emplace_back(currentTri, pointCircle.fillColor);
+                currentTri_state = CurrentState::NONE;
+                currentTri_maxState = CurrentState::NONE;
+                flags.set(F_DRAW_CACHE_DIRTY);
+                break;
+            }
+        } else if(flags.test(F_COPY_COLOR_MODE)) {
+            check_draw_cache();
+            Image drawImage = GetTextureData(drawCache.texture);
+            Color *colors = LoadImageColors(drawImage);
+            int mx = GetMouseX();
+            int my = GetMouseY();
+            if(mx < 0) { mx = 0; }
+            else if(mx >= (int)width) { mx = width - 1; }
+            if(my < 0) { my = 0; }
+            else if(my >= (int)height) { my = height - 1; }
+
+            colorPickerColor[0] = colors[mx + my * width].r;
+            colorPickerColor[1] = colors[mx + my * width].g;
+            colorPickerColor[2] = colors[mx + my * width].b;
+            colorPickerColor[3] = 1.0f;
+            pointCircle.fillColor = colors[mx + my * width];
+            flags.reset(F_COPY_COLOR_MODE);
+            set_notification_text("Color set");
+
+            UnloadImageColors(colors);
+            UnloadImage(drawImage);
+        } else if(flags.test(F_SELECT_TRI_MODE)) {
+            int mx = GetMouseX();
+            int my = GetMouseY();
+            if(mx < 0) { mx = 0; }
+            else if(mx >= (int)width) { mx = width - 1; }
+            if(my < 0) { my = 0; }
+            else if(my >= (int)height) { my = height - 1; }
+
+            for(unsigned int i = trisIndex; i-- > 0; ) {
+                if(is_within_shape(tris.at(i), {mx, my})) {
+                    selectedTri = i;
+                    tris[i].outlineColor = invert_color(tris[i].fillColor);
+                    flags.reset(F_SELECT_TRI_MODE);
+                    flags.set(F_TRI_EDIT_MODE);
+                    flags.set(F_TRI_EDIT_DRAW_TRI);
+                    selectedTriBlinkTimer = 1.0f;
+                    selectedTriColor[0] = tris[i].fillColor.r / 255.0f;
+                    selectedTriColor[1] = tris[i].fillColor.g / 255.0f;
+                    selectedTriColor[2] = tris[i].fillColor.b / 255.0f;
+                    selectedTriColor[3] = tris[i].fillColor.a / 255.0f;
+                    break;
+                }
+            }
+            if(!flags.test(F_TRI_EDIT_MODE)) {
+                set_notification_text("Did not select\nanything");
             }
         }
     }
 }
 
 void Tri::State::update() {
-    ImGui::SFML::Update(window, dt);
+    dt = GetFrameTime();
 
     if(notification_alpha > 0.0f) {
-        notification_alpha -= dt.asSeconds() * STARTING_HELP_FADE_RATE;
+        notification_alpha -= dt * STARTING_HELP_FADE_RATE;
         if(notification_alpha < 0.0f) {
             notification_alpha = 0.0f;
         }
@@ -245,11 +264,11 @@ void Tri::State::update() {
 
     if(flags.test(F_COLOR_P_COLOR_DIRTY)) {
         flags.reset(F_COLOR_P_COLOR_DIRTY);
-        pointCircle.setFillColor(sf::Color(
+        pointCircle.fillColor = Color{
             (unsigned char)(255 * colorPickerColor[0]),
             (unsigned char)(255 * colorPickerColor[1]),
             (unsigned char)(255 * colorPickerColor[2]),
-            (unsigned char)(255 * colorPickerColor[3])));
+            (unsigned char)(255 * colorPickerColor[3])};
     }
 
     if(flags.test(F_BG_COLOR_P_COLOR_DIRTY)) {
@@ -260,14 +279,40 @@ void Tri::State::update() {
     }
 
     if(flags.test(F_TRI_EDIT_MODE)) {
-        selectedTriBlinkTimer -= dt.asSeconds() * TRIANGLES_EDIT_TRI_BLINK_RATE;
+        selectedTriBlinkTimer -= dt * TRIANGLES_EDIT_TRI_BLINK_RATE;
         if(selectedTriBlinkTimer <= 0.0f) {
             selectedTriBlinkTimer = 1.0f;
             flags.flip(F_TRI_EDIT_DRAW_TRI);
         }
     }
+}
 
-    // Seems misleading, but imgui handles setting up the window during update
+void Tri::State::draw() {
+    // Should be able to directly draw a texture held by the RenderTexture2D
+    if(flags.test(F_DRAW_CACHE_INITIALIZED)) {
+        // draw cache initialized
+        check_draw_cache();
+        BeginDrawing();
+        DrawTexture(drawCache.texture, 0, 0, WHITE);
+    } else {
+        BeginDrawing();
+        draw_to_target(nullptr);
+    }
+
+    if(flags.test(F_TRI_EDIT_MODE) && flags.test(F_TRI_EDIT_DRAW_TRI)) {
+//        tris.at(selectedTri).setOutlineThickness(4.0f);
+        tris[selectedTri].draw();
+//        tris.at(selectedTri).setOutlineThickness(0.0f);
+    }
+
+    if(can_draw()) {
+        for(unsigned int i = 0; i < currentTri_state; ++i) {
+            pointCircle.resetTransform();
+            pointCircle.translate(currentTri[i]);
+            pointCircle.draw();
+        }
+    }
+
     Tri::draw_notification(this);
     Tri::draw_color_picker(this);
     Tri::draw_bg_color_picker(this);
@@ -276,48 +321,27 @@ void Tri::State::update() {
     Tri::draw_save(this);
     Tri::draw_help(this);
 
-    ImGui::EndFrame();
+    EndDrawing();
 }
 
-void Tri::State::draw() {
-    if(flags.test(F_DRAW_CACHE_INITIALIZED)) {
-        // draw cache initialized
-        if(flags.test(F_DRAW_CACHE_DIRTY)) {
-            // draw cache dirty
-            flags.reset(F_DRAW_CACHE_DIRTY);
-            draw_to_target(&drawCache);
-            drawCache.display();
+void Tri::State::draw_to_target(RenderTexture2D *target) {
+    if(target) {
+        BeginTextureMode(*target);
+        ClearBackground(bgColor);
+
+        // draw tris
+        for(unsigned int i = 0; i < trisIndex; ++i) {
+            tris[i].draw();
         }
-        window.draw(drawCacheSprite);
+        EndTextureMode();
     } else {
-        draw_to_target(&window);
-    }
+        // Expects BeginDrawing() already having been called prior to this fn
+        ClearBackground(bgColor);
 
-    if(flags.test(F_TRI_EDIT_MODE) && flags.test(F_TRI_EDIT_DRAW_TRI)) {
-        tris.at(selectedTri).setOutlineThickness(4.0f);
-        window.draw(tris[selectedTri]);
-        tris.at(selectedTri).setOutlineThickness(0.0f);
-    }
-
-    if(can_draw()) {
-        for(unsigned int i = 0; i < currentTri_state; ++i) {
-            pointCircle.setPosition(currentTri[i]);
-            window.draw(pointCircle);
+        // draw tris
+        for(unsigned int i = 0; i < trisIndex; ++i) {
+            tris[i].draw();
         }
-    }
-
-    // draw gui stuff
-    ImGui::SFML::Render(window);
-
-    window.display();
-}
-
-void Tri::State::draw_to_target(sf::RenderTarget *target) {
-    target->clear(bgColor);
-
-    // draw tris
-    for(unsigned int i = 0; i < trisIndex; ++i) {
-        target->draw(tris[i]);
     }
 }
 
@@ -349,12 +373,12 @@ void Tri::State::set_notification_text(const char *text) {
     notification_alpha = 1.0f;
 }
 
-float* Tri::State::get_color() {
+std::array<float, 4>& Tri::State::get_color() {
     flags.set(F_COLOR_P_COLOR_DIRTY);
     return colorPickerColor;
 }
 
-float* Tri::State::get_bg_color() {
+std::array<float, 3>& Tri::State::get_bg_color() {
     flags.set(F_BG_COLOR_P_COLOR_DIRTY);
     return bgColorPickerColor;
 }
@@ -364,36 +388,30 @@ Tri::State::FilenameBufferType* Tri::State::get_save_filename_buffer() {
 }
 
 bool Tri::State::do_save() {
-    sf::RenderTexture saveTexture;
-    if(!saveTexture.create(width, height)) {
-#ifndef NDEBUG
-        puts("ERROR: Failed to create texture for saving");
-#endif
-        failedMessage = std::string("Failed to create texture for saving");
-        return false;
-    }
+    RenderTexture2D saveTexture = LoadRenderTexture(width, height);
 
     draw_to_target(&saveTexture);
-    saveTexture.display();
 
-    sf::Image saveImage = saveTexture.getTexture().copyToImage();
-    std::string filename = std::string(saveFilenameBuffer.data());
-    if(saveImage.saveToFile(filename)) {
+    Image saveImage = GetTextureData(saveTexture.texture);
+    UnloadRenderTexture(saveTexture);
+    if(ExportImage(saveImage, saveFilenameBuffer.data())) {
 #ifndef NDEBUG
-        printf("Saved to \"%s\"\n", filename.c_str());
+        printf("Saved to \"%s\"\n", saveFilenameBuffer.data());
 #endif
         failedMessage.clear();
+        UnloadImage(saveImage);
         return true;
     } else {
 #ifndef NDEBUG
-        printf("ERROR: Failed to save \"%s\"\n", filename.c_str());
+        printf("ERROR: Failed to save \"%s\"\n", saveFilenameBuffer.data());
 #endif
         failedMessage = std::string("Failed to save (does the name end in \".png\"?)");
+        UnloadImage(saveImage);
         return false;
     }
 }
 
-std::string_view Tri::State::failed_message() const {
+const std::string& Tri::State::failed_message() const {
     return failedMessage;
 }
 
@@ -439,47 +457,40 @@ void Tri::State::close_bg_color_picker() {
 
 bool Tri::State::change_width_height() {
     std::bitset<2> warnings;
-    if(inputWidthHeight[0] < 0 || inputWidthHeight[1] < 0) {
+    if(inputWidth < 0 || inputHeight < 0) {
         failedMessage = "Width or Height cannot be less than 0";
         return false;
     }
-    if(inputWidthHeight[0] < 200) {
-        inputWidthHeight[0] = 200;
-        warnings.set(F_DISPLAY_HELP);
+    if(inputWidth < 800) {
+        inputWidth = 800;
+        warnings.set(0);
     }
-    if(inputWidthHeight[1] < 150) {
-        inputWidthHeight[1] = 150;
-        warnings.set(F_IS_RUNNING);
+    if(inputHeight < 600) {
+        inputHeight = 600;
+        warnings.set(1);
     }
 
     if(warnings.test(0) && warnings.test(1)) {
-        set_notification_text("Width set to 200\nHeight set to 150");
+        set_notification_text("Width set to 800\nHeight set to 600");
     } else if(warnings.test(0)) {
-        set_notification_text("Width set to 200");
+        set_notification_text("Width set to 800");
     } else if(warnings.test(1)) {
-        set_notification_text("Height set to 150");
+        set_notification_text("Height set to 600");
     }
 
-    this->width = inputWidthHeight[0];
-    this->height = inputWidthHeight[1];
+    this->width = inputWidth;
+    this->height = inputHeight;
 
-    window.setSize({this->width, this->height});
-    sf::View newView(
-        sf::Vector2f(width / 2.0f, height / 2.0f),
-        sf::Vector2f(width, height));
-    window.setView(newView);
+    SetWindowSize(this->width, this->height);
 
-    drawCache.create(width, height);
-    drawCacheSprite.setTexture(drawCache.getTexture(), true);
+    UnloadRenderTexture(drawCache);
+    drawCache = LoadRenderTexture(this->width, this->height);
+
     flags.set(F_DRAW_CACHE_DIRTY);
 
     currentTri_state = CurrentState::NONE;
 
     return true;
-}
-
-int* Tri::State::get_input_width_height() {
-    return inputWidthHeight;
 }
 
 void Tri::State::close_input_width_height_window() {
@@ -490,21 +501,40 @@ float Tri::State::get_pi() const {
     return pi;
 }
 
-float* Tri::State::get_selected_tri_color() {
-    tris.at(selectedTri).setFillColor(sf::Color(
+std::array<float, 4>& Tri::State::get_selected_tri_color() {
+    tris.at(selectedTri).fillColor = Color{
         (unsigned char)(255.0f * selectedTriColor[0]),
         (unsigned char)(255.0f * selectedTriColor[1]),
         (unsigned char)(255.0f * selectedTriColor[2]),
-        (unsigned char)(255.0f * selectedTriColor[3])));
+        (unsigned char)(255.0f * selectedTriColor[3])};
     return selectedTriColor;
 }
 
 void Tri::State::close_selected_tri_mode() {
-    tris.at(selectedTri).setFillColor(sf::Color(
+    tris.at(selectedTri).fillColor = Color{
         (unsigned char)(255.0f * selectedTriColor[0]),
         (unsigned char)(255.0f * selectedTriColor[1]),
         (unsigned char)(255.0f * selectedTriColor[2]),
-        (unsigned char)(255.0f * selectedTriColor[3])));
+        (unsigned char)(255.0f * selectedTriColor[3])};
     flags.set(F_DRAW_CACHE_DIRTY);
     reset_modes();
+}
+
+bool Tri::State::check_draw_cache() {
+    if(flags.test(F_DRAW_CACHE_INITIALIZED) && flags.test(F_DRAW_CACHE_DIRTY)) {
+        // draw cache initialized and dirty
+        flags.reset(F_DRAW_CACHE_DIRTY);
+        draw_to_target(&drawCache);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int* Tri::State::get_input_width() {
+    return &inputWidth;
+}
+
+int* Tri::State::get_input_height() {
+    return &inputHeight;
 }

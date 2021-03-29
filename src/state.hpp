@@ -7,8 +7,10 @@
 #include <vector>
 #include <array>
 
-#include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
+#include "glm/glm.hpp"
+
+#include "triangle.hpp"
+#include "circle.hpp"
 
 namespace Tri {
     class State {
@@ -40,39 +42,36 @@ namespace Tri {
         BitsetType flags;
         unsigned int width;
         unsigned int height;
-        const sf::Time dt;
+        float dt;
         float notification_alpha;
-        typedef std::array<char, 256> NotificationBufferType;
-        NotificationBufferType notification_text;
+        typedef std::array<char, 256> NBufferType;
+        NBufferType notification_text;
 
-        sf::RenderWindow window;
-        std::vector<sf::ConvexShape> tris;
+        std::vector<Triangle> tris;
         unsigned int trisIndex;
-        sf::Vector2f currentTri[3];
+        std::array<glm::vec2, 3> currentTri;
         CurrentState currentTri_state;
         CurrentState currentTri_maxState;
-        sf::CircleShape pointCircle;
+        Circle pointCircle;
 
-        sf::Event event;
-
-        float colorPickerColor[4];
-        float bgColorPickerColor[3];
-        sf::Color bgColor;
+        std::array<float, 4> colorPickerColor;
+        std::array<float, 3> bgColorPickerColor;
+        Color bgColor;
 
         typedef std::array<char, 256> FilenameBufferType;
         FilenameBufferType saveFilenameBuffer;
         std::string failedMessage;
 
-        sf::RenderTexture drawCache;
-        sf::Sprite drawCacheSprite;
-
-        int inputWidthHeight[2];
+        RenderTexture2D drawCache;
 
         const float pi;
 
         unsigned int selectedTri;
-        float selectedTriColor[4];
+        std::array<float, 4> selectedTriColor;
         float selectedTriBlinkTimer;
+
+        int inputWidth;
+        int inputHeight;
 
     public:
         void handle_events();
@@ -80,7 +79,7 @@ namespace Tri {
         void draw();
 
     private:
-        void draw_to_target(sf::RenderTarget *target);
+        void draw_to_target(RenderTexture2D *target);
 
     public:
         unsigned int get_width() const;
@@ -95,12 +94,12 @@ namespace Tri {
         void set_notification_text(const char *text);
 
     public:
-        float* get_color();
-        float* get_bg_color();
+        std::array<float, 4>& get_color();
+        std::array<float, 3>& get_bg_color();
 
         FilenameBufferType* get_save_filename_buffer();
         bool do_save();
-        std::string_view failed_message() const;
+        const std::string& failed_message() const;
         void close_save();
 
     private:
@@ -113,13 +112,19 @@ namespace Tri {
         void close_bg_color_picker();
 
         bool change_width_height();
-        int* get_input_width_height();
         void close_input_width_height_window();
 
         float get_pi() const;
 
-        float* get_selected_tri_color();
+        std::array<float, 4>& get_selected_tri_color();
         void close_selected_tri_mode();
+
+    private:
+        bool check_draw_cache();
+
+    public:
+        int* get_input_width();
+        int* get_input_height();
 
     };
 }
