@@ -293,7 +293,18 @@ void Tri::State::draw() {
         // draw cache initialized
         check_draw_cache();
         BeginDrawing();
-        DrawTexture(drawCache.texture, 0, 0, WHITE);
+        // hack to flip in the y direction, since RenderTexture2D's texture
+        // is flipped
+        DrawTextureRec(
+            drawCache.texture,
+            {
+                0.0f,
+                0.0f,
+                (float)drawCache.texture.width,
+                (float)-drawCache.texture.height
+            },
+            {0.0f, 0.0f},
+            WHITE);
     } else {
         BeginDrawing();
         draw_to_target(nullptr);
