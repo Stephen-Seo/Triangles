@@ -150,8 +150,9 @@ void Tri::State::handle_events() {
             case KEY_I:
                 flags.flip(F_DISPLAY_CHANGE_SIZE);
                 if(!flags.test(F_DISPLAY_CHANGE_SIZE)) {
-                    inputWidth = width;
-                    inputHeight = height;
+                    close_input_width_height_window();
+                } else {
+                    failedMessage = "Press TAB to switch between width/height";
                 }
                 break;
             case KEY_E:
@@ -163,6 +164,9 @@ void Tri::State::handle_events() {
                         set_notification_text("Click on a tri\nto edit it");
                     }
                 }
+                break;
+            case KEY_TAB:
+                flags.flip(F_TAB_TOGGLE);
                 break;
             }
         }
@@ -394,7 +398,7 @@ std::array<float, 3>& Tri::State::get_bg_color() {
     return bgColorPickerColor;
 }
 
-Tri::State::FilenameBufferType* Tri::State::get_save_filename_buffer() {
+std::array<char, 256>* Tri::State::get_save_filename_buffer() {
     return &saveFilenameBuffer;
 }
 
@@ -505,6 +509,9 @@ bool Tri::State::change_width_height() {
 }
 
 void Tri::State::close_input_width_height_window() {
+    failedMessage.clear();
+    inputWidth = width;
+    inputHeight = height;
     flags.reset(F_DISPLAY_CHANGE_SIZE);
 }
 

@@ -34,6 +34,7 @@ namespace Tri {
             F_SELECT_TRI_MODE           = 11,
             F_TRI_EDIT_MODE             = 12,
             F_TRI_EDIT_DRAW_TRI         = 13,
+            F_TAB_TOGGLE                = 14,
         };
 
     private:
@@ -44,8 +45,7 @@ namespace Tri {
         unsigned int height;
         float dt;
         float notification_alpha;
-        typedef std::array<char, 256> NBufferType;
-        NBufferType notification_text;
+        std::array<char, 256> notification_text;
 
         std::vector<Triangle> tris;
         unsigned int trisIndex;
@@ -58,8 +58,7 @@ namespace Tri {
         std::array<float, 3> bgColorPickerColor;
         Color bgColor;
 
-        typedef std::array<char, 256> FilenameBufferType;
-        FilenameBufferType saveFilenameBuffer;
+        std::array<char, 256> saveFilenameBuffer;
         std::string failedMessage;
 
         RenderTexture2D drawCache;
@@ -97,7 +96,7 @@ namespace Tri {
         std::array<float, 4>& get_color();
         std::array<float, 3>& get_bg_color();
 
-        FilenameBufferType* get_save_filename_buffer();
+        std::array<char, 256>* get_save_filename_buffer();
         bool do_save();
         const std::string& failed_message() const;
         void close_save();

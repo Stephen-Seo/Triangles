@@ -173,14 +173,14 @@ namespace Tri {
                         state->get_input_width(),
                         800,
                         1920,
-                        true);
+                        state->get_flags().test(State::F_TAB_TOGGLE));
                 GuiValueBox(
                         {384.0f, 348.0f, 80.0f, 16.0f},
                         "Height",
                         state->get_input_height(),
                         600,
                         1080,
-                        true);
+                        !state->get_flags().test(State::F_TAB_TOGGLE));
                 const std::string &failMessage = state->failed_message();
                 if(!failMessage.empty()) {
                     GuiLabel({304.0f, 368.0f, 284.0f, 16.0f}, failMessage.c_str());
