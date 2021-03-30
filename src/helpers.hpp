@@ -30,33 +30,39 @@ namespace Tri {
                              600.0f - 20.0f},
                              "Help")) {
                 GuiLabel(
-                    {4.0f, 4.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 38.0f, 800.0f - 28.0f, 16.0f},
                     "This is the help window - Press \"H\" to toggle this window");
                 GuiLabel(
-                    {4.0f, 22.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 56.0f, 800.0f - 28.0f, 16.0f},
                     "Click anywhere to create triangles, one point at a time");
                 GuiLabel(
-                    {4.0f, 40.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 74.0f, 800.0f - 28.0f, 16.0f},
                     "You cannot draw when a window is open");
                 GuiLabel(
-                    {4.0f, 58.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 92.0f, 800.0f - 28.0f, 16.0f},
                     "Press \"U\" to undo. Clicking will remove all future undo history");
                 GuiLabel(
-                    {4.0f, 76.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 110.0f, 800.0f - 28.0f, 16.0f},
                     "Press \"R\" to redo.");
                 GuiLabel(
-                    {4.0f, 94.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 128.0f, 800.0f - 28.0f, 16.0f},
                     "Press \"C\" to change colors");
                 GuiLabel(
-                    {4.0f, 112.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 146.0f, 800.0f - 28.0f, 16.0f},
                     "Press \"B\" to change background color");
                 GuiLabel(
-                    {4.0f, 130.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 164.0f, 800.0f - 28.0f, 16.0f},
                     "Press \"P\" to set current color to a color on screen");
                 GuiLabel(
-                    {4.0f, 148.0f, 800.0f - 28.0f, 16.0f},
+                    {14.0f, 182.0f, 800.0f - 28.0f, 16.0f},
                     "Press \"S\" to save what was drawn as a png image");
-                if(GuiButton({4.0f, 168.0f, 100.0f, 16.0f}, "Close")) {
+                GuiLabel(
+                    {14.0f, 200.0f, 800.0f - 28.0f, 16.0f},
+                    "Press \"I\" to resize the canvas");
+                GuiLabel(
+                    {14.0f, 218.0f, 800.0f - 28.0f, 16.0f},
+                    "Press \"E\" to edit the selected tri");
+                if(GuiButton({14.0f, 238.0f, 100.0f, 16.0f}, "Close")) {
                     state->close_help();
                 }
             } else {
@@ -70,10 +76,13 @@ namespace Tri {
         if(alpha > 0.0f) {
             GuiFade(alpha);
             GuiPanel({(800 - SHOW_HELP_WIDTH) / 2.0f,
-                          (600 - SHOW_HELP_HEIGHT) / 2.0f,
-                          SHOW_HELP_WIDTH,
-                          SHOW_HELP_HEIGHT});
-            GuiLabel({4.0f, 4.0f, SHOW_HELP_WIDTH - 8.0f, SHOW_HELP_HEIGHT - 8.0f},
+                      (600 - SHOW_HELP_HEIGHT) / 2.0f,
+                      SHOW_HELP_WIDTH,
+                      SHOW_HELP_HEIGHT});
+            GuiLabel({4.0f + (800 - SHOW_HELP_WIDTH) / 2.0f,
+                      4.0f + (600 - SHOW_HELP_HEIGHT) / 2.0f,
+                      SHOW_HELP_WIDTH - 8.0f,
+                      SHOW_HELP_HEIGHT - 8.0f},
                      state->get_notification_text());
         }
     }
@@ -84,7 +93,7 @@ namespace Tri {
             if(!GuiWindowBox({4.0f, 4.0f, 242.0f, 292.0f}, "Tri Color Picker")) {
                 auto &colorArray = state->get_color();
                 Color color = GuiColorPicker(
-                    {4.0f, 4.0f, 234.0f, 264.0f},
+                    {8.0f, 32.0f, 206.0f, 240.0f},
                     {(unsigned char)(colorArray[0] * 255.0f),
                      (unsigned char)(colorArray[1] * 255.0f),
                      (unsigned char)(colorArray[2] * 255.0f),
@@ -95,7 +104,7 @@ namespace Tri {
                     color.b / 255.0f,
                     color.a / 255.0f
                 };
-                if(GuiButton({4.0f, 268.0f, 234.0f, 16.0f}, "Close")) {
+                if(GuiButton({8.0f, 272.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_color_picker();
                 }
             } else {
@@ -110,7 +119,7 @@ namespace Tri {
             if(!GuiWindowBox({250.0f, 4.0f, 242.0f, 292.0f}, "BG Color Picker")) {
                 auto &colorArray = state->get_bg_color();
                 Color color = GuiColorPicker(
-                    {4.0f, 4.0f, 234.0f, 264.0f},
+                    {254.0f, 32.0f, 206.0f, 240.0f},
                     {(unsigned char)(colorArray[0] * 255.0f),
                      (unsigned char)(colorArray[1] * 255.0f),
                      (unsigned char)(colorArray[2] * 255.0f),
@@ -120,7 +129,7 @@ namespace Tri {
                     color.g / 255.0f,
                     color.b / 255.0f
                 };
-                if(GuiButton({4.0f, 268.0f, 234.0f, 16.0f}, "Close")) {
+                if(GuiButton({254.0f, 272.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_bg_color_picker();
                 }
             } else {
@@ -135,18 +144,18 @@ namespace Tri {
             GuiFade(1.0f);
             if(!GuiWindowBox({4.0f, 300.0f, 292.0f, 292.0f}, "Save")) {
                 GuiTextBox(
-                    {4.0f, 4.0f, 284.0f, 150.0f},
+                    {8.0f, 328.0f, 284.0f, 20.0f},
                     filenameBuffer->data(),
                     filenameBuffer->size() - 1,
                     true);
-                if(GuiButton({4.0f, 158.0f, 50.0f, 16.0f}, "Save")) {
+                if(GuiButton({8.0f, 352.0f, 50.0f, 16.0f}, "Save")) {
                     if(state->do_save()) {
                         state->close_save();
                     }
                 }
                 const std::string &string = state->failed_message();
                 if(!string.empty()) {
-                    GuiLabel({4.0f, 178.0f, 284.0f, 16.0f}, string.c_str());
+                    GuiLabel({8.0f, 372.0f, 284.0f, 16.0f}, string.c_str());
                 }
             } else {
                 state->close_save();
@@ -159,14 +168,14 @@ namespace Tri {
             GuiFade(1.0f);
             if(!GuiWindowBox({300.0f, 300.0f, 292.0f, 292.0f}, "Change Size")) {
                 GuiValueBox(
-                        {4.0f, 4.0f, 80.0f, 16.0f},
+                        {384.0f, 328.0f, 80.0f, 16.0f},
                         "Width",
                         state->get_input_width(),
                         800,
                         1920,
                         true);
                 GuiValueBox(
-                        {4.0f, 24.0f, 80.0f, 16.0f},
+                        {384.0f, 348.0f, 80.0f, 16.0f},
                         "Height",
                         state->get_input_height(),
                         600,
@@ -174,12 +183,12 @@ namespace Tri {
                         true);
                 const std::string &failMessage = state->failed_message();
                 if(!failMessage.empty()) {
-                    GuiLabel({4.0f, 44.0f, 284.0f, 16.0f}, failMessage.c_str());
+                    GuiLabel({304.0f, 368.0f, 284.0f, 16.0f}, failMessage.c_str());
                 }
-                if(GuiButton({4.0f, 70.0f, 70.0f, 16.0f}, "Cancel")) {
+                if(GuiButton({304.0f, 394.0f, 70.0f, 16.0f}, "Cancel")) {
                     state->close_input_width_height_window();
                 }
-                if(GuiButton({58.0f, 70.0f, 50.0f, 16.0f}, "Set")) {
+                if(GuiButton({378.0f, 394.0f, 50.0f, 16.0f}, "Set")) {
                     if(state->change_width_height()) {
                         state->close_input_width_height_window();
                     }
@@ -250,7 +259,7 @@ namespace Tri {
             if(!GuiWindowBox({500.0f, 4.0f, 242.0f, 292.0f}, "Edit Tri Color Picker")) {
                 auto &colorArray = state->get_selected_tri_color();
                 Color color = GuiColorPicker(
-                    {4.0f, 4.0f, 234.0f, 264.0f},
+                    {504.0f, 32.0f, 206.0f, 240.0f},
                     {(unsigned char)(colorArray[0] * 255.0f),
                      (unsigned char)(colorArray[1] * 255.0f),
                      (unsigned char)(colorArray[2] * 255.0f),
@@ -261,7 +270,7 @@ namespace Tri {
                     color.b / 255.0f,
                     color.a / 255.0f
                 };
-                if(GuiButton({4.0f, 268.0f, 234.0f, 16.0f}, "Close")) {
+                if(GuiButton({504.0f, 272.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_selected_tri_mode();
                 }
             } else {
