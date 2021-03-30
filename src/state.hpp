@@ -44,8 +44,8 @@ namespace Tri {
         unsigned int width;
         unsigned int height;
         float dt;
-        float notification_alpha;
-        std::array<char, 256> notification_text;
+        float notificationAlpha;
+        std::array<char, 256> notificationText;
 
         std::vector<Triangle> tris;
         unsigned int trisIndex;
@@ -91,6 +91,7 @@ namespace Tri {
 
     private:
         void set_notification_text(const char *text);
+        void append_notification_text(const char *text);
 
     public:
         std::array<float, 4>& get_color();

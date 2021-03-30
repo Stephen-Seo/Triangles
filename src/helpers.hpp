@@ -14,6 +14,11 @@
 #define SHOW_HELP_WIDTH (state->get_width() / 2.0f)
 #define SHOW_HELP_HEIGHT (state->get_height() / 2.0f)
 
+#define CHANGE_SIZE_MIN_X 800
+#define CHANGE_SIZE_MAX_X 1920
+#define CHANGE_SIZE_MIN_Y 600
+#define CHANGE_SIZE_MAX_Y 1080
+
 #ifndef NDEBUG
 # include <cstdio>
 #endif
@@ -171,16 +176,16 @@ namespace Tri {
                         {384.0f, 328.0f, 80.0f, 16.0f},
                         "Width",
                         state->get_input_width(),
-                        800,
-                        1920,
-                        state->get_flags().test(State::F_TAB_TOGGLE));
+                        CHANGE_SIZE_MIN_X,
+                        CHANGE_SIZE_MAX_X,
+                        !state->get_flags().test(State::F_TAB_TOGGLE));
                 GuiValueBox(
                         {384.0f, 348.0f, 80.0f, 16.0f},
                         "Height",
                         state->get_input_height(),
-                        600,
-                        1080,
-                        !state->get_flags().test(State::F_TAB_TOGGLE));
+                        CHANGE_SIZE_MIN_Y,
+                        CHANGE_SIZE_MAX_Y,
+                        state->get_flags().test(State::F_TAB_TOGGLE));
                 const std::string &failMessage = state->failed_message();
                 if(!failMessage.empty()) {
                     GuiLabel({304.0f, 368.0f, 284.0f, 16.0f}, failMessage.c_str());

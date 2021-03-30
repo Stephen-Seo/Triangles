@@ -4,6 +4,7 @@
 #include <cassert>
 #include <string>
 #include <cmath>
+#include <cstdio>
 
 #include <raylib.h>
 
@@ -11,15 +12,11 @@
 
 #define STARTING_HELP_FADE_RATE 0.2f
 
-#ifndef NDEBUG
-# include <cstdio>
-#endif
-
 Tri::State::State(int argc, char **argv) :
 width(800),
 height(600),
 dt(1.0f/60.0f),
-notification_alpha(1.0f),
+notificationAlpha(1.0f),
 trisIndex(0),
 currentTri_state(CurrentState::NONE),
 currentTri_maxState(CurrentState::NONE),
@@ -144,7 +141,7 @@ void Tri::State::handle_events() {
                         "to what was\n"
                         "clicked on");
                 } else {
-                    notification_alpha = 0.0f;
+                    notificationAlpha = 0.0f;
                 }
                 break;
             case KEY_I:
@@ -259,10 +256,10 @@ void Tri::State::handle_events() {
 void Tri::State::update() {
     dt = GetFrameTime();
 
-    if(notification_alpha > 0.0f) {
-        notification_alpha -= dt * STARTING_HELP_FADE_RATE;
-        if(notification_alpha < 0.0f) {
-            notification_alpha = 0.0f;
+    if(notificationAlpha > 0.0f) {
+        notificationAlpha -= dt * STARTING_HELP_FADE_RATE;
+        if(notificationAlpha < 0.0f) {
+            notificationAlpha = 0.0f;
         }
     }
 
@@ -373,19 +370,31 @@ const Tri::State::BitsetType Tri::State::get_flags() const {
 }
 
 float Tri::State::get_notification_alpha() const {
-    return notification_alpha;
+    return notificationAlpha;
 }
 
 const char* Tri::State::get_notification_text() const {
-    return notification_text.data();
+    return notificationText.data();
 }
 
 void Tri::State::set_notification_text(const char *text) {
-    notification_text.fill(0);
-    std::strncpy(notification_text.data(),
+    notificationText.fill(0);
+    std::strncpy(notificationText.data(),
         text,
-        notification_text.max_size() - 1);
-    notification_alpha = 1.0f;
+        notificationText.max_size() - 1);
+    notificationAlpha = 1.0f;
+}
+
+void Tri::State::append_notification_text(const char *text) {
+    auto length = std::strlen(notificationText.data());
+    if(length + 1 >= notificationText.max_size()) {
+        return;
+    }
+    std::strncpy(
+        notificationText.data() + length,
+        text,
+        notificationText.max_size() - length - 1);
+    notificationAlpha = 1.0f;
 }
 
 std::array<float, 4>& Tri::State::get_color() {
@@ -471,34 +480,33 @@ void Tri::State::close_bg_color_picker() {
 }
 
 bool Tri::State::change_width_height() {
-    std::bitset<2> warnings;
     if(inputWidth < 0 || inputHeight < 0) {
         failedMessage = "Width or Height cannot be less than 0";
         return false;
     }
     if(inputWidth < 800) {
         inputWidth = 800;
-        warnings.set(0);
     }
     if(inputHeight < 600) {
         inputHeight = 600;
-        warnings.set(1);
     }
 
-    if(warnings.test(0) && warnings.test(1)) {
-        set_notification_text("Width set to 800\nHeight set to 600");
-    } else if(warnings.test(0)) {
-        set_notification_text("Width set to 800");
-    } else if(warnings.test(1)) {
-        set_notification_text("Height set to 600");
-    }
+    notificationText.fill(0);
+    std::array<char, 5> tempBuf = {0, 0, 0, 0, 0};
+
+    append_notification_text("Width set to ");
+    snprintf(tempBuf.data(), 5, "%u", inputWidth);
+    append_notification_text(tempBuf.data());
+
+    append_notification_text(", Height set to ");
+    snprintf(tempBuf.data(), 5, "%u", inputHeight);
+    append_notification_text(tempBuf.data());
 
     this->width = inputWidth;
     this->height = inputHeight;
 
-    SetWindowSize(this->width, this->height);
-
     UnloadRenderTexture(drawCache);
+    SetWindowSize(this->width, this->height);
     drawCache = LoadRenderTexture(this->width, this->height);
 
     flags.set(F_DRAW_CACHE_DIRTY);
