@@ -13,8 +13,8 @@
 #define STARTING_HELP_FADE_RATE 0.2f
 
 Tri::State::State(int argc, char **argv) :
-width(800),
-height(600),
+width(DEFAULT_WIDTH),
+height(DEFAULT_HEIGHT),
 dt(1.0f/60.0f),
 notificationAlpha(1.0f),
 trisIndex(0),

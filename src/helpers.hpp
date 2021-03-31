@@ -14,6 +14,8 @@
 #define SHOW_HELP_WIDTH (state->get_width() / 2.0f)
 #define SHOW_HELP_HEIGHT (state->get_height() / 2.0f)
 
+#define DEFAULT_WIDTH 800
+#define DEFAULT_HEIGHT 600
 #define CHANGE_SIZE_MIN_X 800
 #define CHANGE_SIZE_MAX_X 1920
 #define CHANGE_SIZE_MIN_Y 600

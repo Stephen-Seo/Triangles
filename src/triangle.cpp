@@ -35,11 +35,11 @@ Tri::Shape& Tri::Triangle::draw() {
         {transformed[1].x, transformed[1].y},
         {transformed[2].x, transformed[2].y},
         fillColor);
-    DrawTriangleLines(
-        {transformed[0].x, transformed[0].y},
-        {transformed[1].x, transformed[1].y},
-        {transformed[2].x, transformed[2].y},
-        outlineColor);
+//    DrawTriangleLines(
+//        {transformed[0].x, transformed[0].y},
+//        {transformed[1].x, transformed[1].y},
+//        {transformed[2].x, transformed[2].y},
+//        outlineColor);
     return *this;
 }
 
