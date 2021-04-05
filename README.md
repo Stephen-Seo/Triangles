@@ -5,7 +5,7 @@ THIS PROJECT IS STILL A WORK IN PROGRESS!
 A gui application that lets you draw triangles of different colors on a colored
 background.
 
-Uses [imgui](https://github.com/ocornut/imgui) for UI.
+Uses [raygui](https://github.com/raysan5/raygui) for UI.
 
 # Compiling
 
@@ -18,19 +18,19 @@ Create a build dir, run cmake, and then make to build.
 
 ## Dependencies
 
-SFML should be installed on the system. imgui, and imgui-sfml are git submodules
-and should be initialized with `git submodule update --init --recursive`.
+Raylib should be installed on the system. Other third-party dependencies are git
+submodules and should be initialized with `git submodule update --init recursive`.
 
 # Legal stuff
 
-Uses [SFML](https://github.com/SFML/SFML), which is licensed under the
-[SFML license](https://github.com/SFML/SFML/blob/master/license.md).
+Uses [raylib](https://github.com/raysan5/raylib), which is licensed under the
+[zlib license](https://choosealicense.com/licenses/zlib).
 
-Uses [imgui](https://github.com/ocornut/imgui), which is licensed under the
-[MIT](https://choosealicense.com/licenses/mit/) license.
+Uses [raygui](https://github.com/raysan5/raylib), which is licensed under the
+[zlib license](https://choosealicense.com/licenses/zlib).
 
-Uses [imgui-sfml](https://github.com/eliasdaler/imgui-sfml), which is licensed
-under the [MIT](https://choosealicense.com/licenses/mit/) license.
+Uses [glm](https://github.com/g-truc/glm), which is licensed under the [Happy
+Bunny License or the MIT License](https://github.com/g-truc/glm/blob/master/copying.txt).
 
 Uses [catch](https://github.com/catchorg/Catch2), which is licensed under the
 [Boost Software](https://choosealicense.com/licenses/bsl-1.0/) license.
