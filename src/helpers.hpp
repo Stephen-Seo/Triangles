@@ -85,7 +85,7 @@ namespace Tri {
             GuiPanel({(800 - SHOW_HELP_WIDTH) / 2.0f,
                       (600 - SHOW_HELP_HEIGHT) / 2.0f,
                       SHOW_HELP_WIDTH,
-                      SHOW_HELP_HEIGHT});
+                      SHOW_HELP_HEIGHT}, nullptr);
             GuiLabel({4.0f + (800 - SHOW_HELP_WIDTH) / 2.0f,
                       4.0f + (600 - SHOW_HELP_HEIGHT) / 2.0f,
                       SHOW_HELP_WIDTH - 8.0f,
@@ -101,6 +101,7 @@ namespace Tri {
                 auto &colorArray = state->get_color();
                 Color color = GuiColorPicker(
                     {8.0f, 32.0f, 206.0f, 240.0f},
+                    nullptr,
                     {(unsigned char)(colorArray[0] * 255.0f),
                      (unsigned char)(colorArray[1] * 255.0f),
                      (unsigned char)(colorArray[2] * 255.0f),
@@ -127,6 +128,7 @@ namespace Tri {
                 auto &colorArray = state->get_bg_color();
                 Color color = GuiColorPicker(
                     {254.0f, 32.0f, 206.0f, 240.0f},
+                    nullptr,
                     {(unsigned char)(colorArray[0] * 255.0f),
                      (unsigned char)(colorArray[1] * 255.0f),
                      (unsigned char)(colorArray[2] * 255.0f),
@@ -267,6 +269,7 @@ namespace Tri {
                 auto &colorArray = state->get_selected_tri_color();
                 Color color = GuiColorPicker(
                     {504.0f, 32.0f, 206.0f, 240.0f},
+                    nullptr,
                     {(unsigned char)(colorArray[0] * 255.0f),
                      (unsigned char)(colorArray[1] * 255.0f),
                      (unsigned char)(colorArray[2] * 255.0f),

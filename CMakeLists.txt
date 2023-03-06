@@ -76,8 +76,8 @@ target_include_directories(TrianglesLib PUBLIC
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
     set(Triangles_UNIT_TEST_SOURCES
-        src/unittest/test_main.cpp
         src/unittest/test_helpers.cpp
+        third_party/catch/catch_amalgamated.cpp
     )
 
     add_executable(UnitTest_Triangles ${Triangles_UNIT_TEST_SOURCES})

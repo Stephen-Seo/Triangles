@@ -204,7 +204,7 @@ void Tri::State::handle_events() {
             }
         } else if(flags.test(F_COPY_COLOR_MODE)) {
             check_draw_cache();
-            Image drawImage = GetTextureData(drawCache.texture);
+            Image drawImage = LoadImageFromTexture(drawCache.texture);
             Color *colors = LoadImageColors(drawImage);
             int mx = GetMouseX();
             int my = GetMouseY();
@@ -416,7 +416,7 @@ bool Tri::State::do_save() {
 
     draw_to_target(&saveTexture);
 
-    Image saveImage = GetTextureData(saveTexture.texture);
+    Image saveImage = LoadImageFromTexture(saveTexture.texture);
     UnloadRenderTexture(saveTexture);
     if(ExportImage(saveImage, saveFilenameBuffer.data())) {
 #ifndef NDEBUG
