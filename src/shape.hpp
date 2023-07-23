@@ -3,8 +3,10 @@
 
 #include <vector>
 
+#pragma GCC diagnostic ignored "-Weffc++"
 #include <raylib.h>
 #include <glm/glm.hpp>
+#pragma GCC diagnostic pop
 
 namespace Tri {
 

@@ -12,18 +12,30 @@
 
 #define STARTING_HELP_FADE_RATE 0.2f
 
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 Tri::State::State(int argc, char **argv) :
+flags(),
 width(DEFAULT_WIDTH),
 height(DEFAULT_HEIGHT),
 dt(1.0f/60.0f),
 notificationAlpha(1.0f),
+notificationText(),
+tris(),
 trisIndex(0),
+currentTri(),
 currentTri_state(CurrentState::NONE),
 currentTri_maxState(CurrentState::NONE),
+pointCircle(),
 colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f},
 bgColorPickerColor{0.0f, 0.0f, 0.0f},
 bgColor(BLACK),
+saveFilenameBuffer(),
+failedMessage(),
+drawCache(),
 pi(std::acos(-1.0f)),
+selectedTri(),
+selectedTriColor(),
+selectedTriBlinkTimer(),
 inputWidth(800),
 inputHeight(600)
 {
@@ -47,6 +59,7 @@ inputHeight(600)
 
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x303030);
 }
+#pragma GCC diagnostic pop
 
 Tri::State::~State() {
     UnloadRenderTexture(drawCache);

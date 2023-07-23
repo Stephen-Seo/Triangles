@@ -28,16 +28,6 @@ set(Triangles_LIB_SOURCES
     src/raygui.cpp
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi")
-	set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DNDEBUG")
-else()
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wsuggest-override")
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -D NDEBUG")
-endif()
-
 add_library(TrianglesLib STATIC ${Triangles_LIB_SOURCES})
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
@@ -45,6 +35,19 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 else()
     add_executable(Triangles ${Triangles_MAIN_SOURCES})
 endif()
+
+target_compile_options(TrianglesLib PRIVATE
+    -Wall -Wextra -Wpedantic
+    -Wsuggest-override
+    $<$<COMPILE_LANGUAGE:CXX>:-Weffc++>
+    $<$<CONFIG:DEBUG>:-O0>
+)
+target_compile_options(Triangles PRIVATE
+    -Wall -Wextra -Wpedantic
+    -Wsuggest-override
+    $<$<COMPILE_LANGUAGE:CXX>:-Weffc++>
+    $<$<CONFIG:DEBUG>:-O0>
+)
 
 target_link_libraries(Triangles PUBLIC TrianglesLib)
 

@@ -1,7 +1,9 @@
 #include "shape.hpp"
 
+#pragma GCC diagnostic ignored "-Weffc++"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
+#pragma GCC diagnostic pop
 
 Tri::Shape::Shape() :
 transform(glm::identity<glm::mat3>()),

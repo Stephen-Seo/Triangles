@@ -1,4 +1,6 @@
+#pragma GCC diagnostic ignored "-Weffc++"
 #include "catch_amalgamated.hpp"
+#pragma GCC diagnostic pop
 
 #include "helpers.hpp"
 #include "triangle.hpp"

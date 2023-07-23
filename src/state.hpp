@@ -7,7 +7,9 @@
 #include <vector>
 #include <array>
 
+#pragma GCC diagnostic ignored "-Weffc++"
 #include "glm/glm.hpp"
+#pragma GCC diagnostic pop
 
 #include "triangle.hpp"
 #include "circle.hpp"
