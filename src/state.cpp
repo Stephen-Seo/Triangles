@@ -12,6 +12,7 @@
 
 #define STARTING_HELP_FADE_RATE 0.2f
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 Tri::State::State(int argc, char **argv) :
 flags(),

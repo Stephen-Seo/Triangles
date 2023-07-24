@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
 #include <raylib.h>
 #include <glm/glm.hpp>

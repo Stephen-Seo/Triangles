@@ -1,5 +1,6 @@
 #include "shape.hpp"
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>

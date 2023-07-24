@@ -1,3 +1,4 @@
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
 #include "catch_amalgamated.hpp"
 #pragma GCC diagnostic pop

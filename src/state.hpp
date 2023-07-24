@@ -7,6 +7,7 @@
 #include <vector>
 #include <array>
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
 #include "glm/glm.hpp"
 #pragma GCC diagnostic pop
