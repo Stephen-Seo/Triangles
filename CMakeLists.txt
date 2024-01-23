@@ -40,13 +40,13 @@ target_compile_options(TrianglesLib PRIVATE
     -Wall -Wextra -Wpedantic
     -Wsuggest-override
     $<$<COMPILE_LANGUAGE:CXX>:-Weffc++>
-    $<$<CONFIG:DEBUG>:-O0>
+    $<$<CONFIG:DEBUG>:-Og>
 )
 target_compile_options(Triangles PRIVATE
     -Wall -Wextra -Wpedantic
     -Wsuggest-override
     $<$<COMPILE_LANGUAGE:CXX>:-Weffc++>
-    $<$<CONFIG:DEBUG>:-O0>
+    $<$<CONFIG:DEBUG>:-Og>
 )
 
 target_link_libraries(Triangles PUBLIC TrianglesLib)
