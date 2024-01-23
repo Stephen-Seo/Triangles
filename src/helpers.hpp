@@ -97,13 +97,20 @@ namespace Tri {
     inline void draw_color_picker(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_DISPLAY_COLOR_P)) {
             GuiSetAlpha(1.0f);
-            if(!GuiWindowBox({4.0f, 4.0f, 242.0f, 292.0f}, "Tri Color Picker")) {
-                auto &colorArray = state->get_color();
+            if(!GuiWindowBox({4.0f, 4.0f, 242.0f, 328.0f}, "Tri Color Picker")) {
+                auto &color = state->get_color();
                 GuiColorPicker(
                     {8.0f, 32.0f, 206.0f, 240.0f},
                     nullptr,
-                    &colorArray);
-                if(GuiButton({8.0f, 274.0f, 234.0f, 16.0f}, "Close")) {
+                    &color);
+                float alpha = ((float)color.a) / 255.0F;
+                GuiColorBarAlpha(
+                    {8.0F, 280.0F, 206.0F, 20.0F},
+                    nullptr,
+                    &alpha
+                );
+                color.a = alpha * 255.0F;
+                if(GuiButton({8.0f, 308.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_color_picker();
                 }
             } else {
@@ -248,13 +255,20 @@ namespace Tri {
     inline void draw_edit_tri(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_TRI_EDIT_MODE)) {
             GuiSetAlpha(1.0f);
-            if(!GuiWindowBox({500.0f, 4.0f, 242.0f, 292.0f}, "Edit Tri Color Picker")) {
-                auto &colorArray = state->get_selected_tri_color();
+            if(!GuiWindowBox({500.0f, 4.0f, 242.0f, 328.0f}, "Edit Tri Color Picker")) {
+                auto &color = state->get_selected_tri_color();
                 GuiColorPicker(
                     {504.0f, 32.0f, 206.0f, 240.0f},
                     nullptr,
-                    &colorArray);
-                if(GuiButton({504.0f, 272.0f, 234.0f, 16.0f}, "Close")) {
+                    &color);
+                float alpha = ((float)color.a) / 255.0F;
+                GuiColorBarAlpha(
+                    {504.0F, 280.0F, 206.0F, 20.0F},
+                    nullptr,
+                    &alpha
+                );
+                color.a = alpha * 255.0F;
+                if(GuiButton({504.0f, 308.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_selected_tri_mode();
                 }
             } else {
