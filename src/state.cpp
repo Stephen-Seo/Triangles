@@ -223,15 +223,17 @@ void Tri::State::handle_events() {
             int mx = GetMouseX();
             int my = GetMouseY();
             if(mx < 0) { mx = 0; }
-            else if(mx >= (int)width) { mx = width - 1; }
+            else if(mx >= drawImage.width) { mx = drawImage.width - 1; }
             if(my < 0) { my = 0; }
-            else if(my >= (int)height) { my = height - 1; }
+            else if(my >= drawImage.height) { my = drawImage.height - 1; }
 
-            colorPickerColor[0] = colors[mx + my * width].r;
-            colorPickerColor[1] = colors[mx + my * width].g;
-            colorPickerColor[2] = colors[mx + my * width].b;
+            my = drawImage.height - my;
+
+            colorPickerColor[0] = (float)(colors[mx + my * drawImage.width].r) / 255.0F;
+            colorPickerColor[1] = (float)(colors[mx + my * drawImage.width].g) / 255.0F;
+            colorPickerColor[2] = (float)(colors[mx + my * drawImage.width].b) / 255.0F;
             colorPickerColor[3] = 1.0f;
-            pointCircle.fillColor = colors[mx + my * width];
+            pointCircle.fillColor = colors[mx + my * drawImage.width];
             flags.reset(F_COPY_COLOR_MODE);
             set_notification_text("Color set");
 
