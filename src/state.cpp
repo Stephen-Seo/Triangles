@@ -27,15 +27,15 @@ currentTri(),
 currentTri_state(CurrentState::NONE),
 currentTri_maxState(CurrentState::NONE),
 pointCircle(),
-colorPickerColor{1.0f, 1.0f, 1.0f, 1.0f},
-bgColorPickerColor{0.0f, 0.0f, 0.0f},
+colorPickerColor{255, 255, 255, 255},
+bgColorPickerColor{0, 0, 0, 255},
 bgColor(BLACK),
 saveFilenameBuffer(),
 failedMessage(),
 drawCache(),
 pi(std::acos(-1.0f)),
 selectedTri(),
-selectedTriColor(),
+selectedTriColor{255, 255, 255, 255},
 selectedTriBlinkTimer(),
 inputWidth(800),
 inputHeight(600)
@@ -229,10 +229,8 @@ void Tri::State::handle_events() {
 
             my = drawImage.height - my;
 
-            colorPickerColor[0] = (float)(colors[mx + my * drawImage.width].r) / 255.0F;
-            colorPickerColor[1] = (float)(colors[mx + my * drawImage.width].g) / 255.0F;
-            colorPickerColor[2] = (float)(colors[mx + my * drawImage.width].b) / 255.0F;
-            colorPickerColor[3] = 1.0f;
+            colorPickerColor = colors[mx + my * drawImage.width];
+
             pointCircle.fillColor = colors[mx + my * drawImage.width];
             flags.reset(F_COPY_COLOR_MODE);
             set_notification_text("Color set");
@@ -255,10 +253,7 @@ void Tri::State::handle_events() {
                     flags.set(F_TRI_EDIT_MODE);
                     flags.set(F_TRI_EDIT_DRAW_TRI);
                     selectedTriBlinkTimer = 1.0f;
-                    selectedTriColor[0] = tris[i].fillColor.r / 255.0f;
-                    selectedTriColor[1] = tris[i].fillColor.g / 255.0f;
-                    selectedTriColor[2] = tris[i].fillColor.b / 255.0f;
-                    selectedTriColor[3] = tris[i].fillColor.a / 255.0f;
+                    selectedTriColor = tris[i].fillColor;
                     break;
                 }
             }
@@ -281,18 +276,13 @@ void Tri::State::update() {
 
     if(flags.test(F_COLOR_P_COLOR_DIRTY)) {
         flags.reset(F_COLOR_P_COLOR_DIRTY);
-        pointCircle.fillColor = Color{
-            (unsigned char)(255 * colorPickerColor[0]),
-            (unsigned char)(255 * colorPickerColor[1]),
-            (unsigned char)(255 * colorPickerColor[2]),
-            (unsigned char)(255 * colorPickerColor[3])};
+        pointCircle.fillColor = colorPickerColor;
     }
 
     if(flags.test(F_BG_COLOR_P_COLOR_DIRTY)) {
         flags.reset(F_BG_COLOR_P_COLOR_DIRTY);
-        bgColor.r = (unsigned char)(255 * bgColorPickerColor[0]);
-        bgColor.g = (unsigned char)(255 * bgColorPickerColor[1]);
-        bgColor.b = (unsigned char)(255 * bgColorPickerColor[2]);
+        bgColor = bgColorPickerColor;
+        bgColor.a = 255;
     }
 
     if(flags.test(F_TRI_EDIT_MODE)) {
@@ -413,12 +403,12 @@ void Tri::State::append_notification_text(const char *text) {
     notificationAlpha = 1.0f;
 }
 
-std::array<float, 4>& Tri::State::get_color() {
+Color& Tri::State::get_color() {
     flags.set(F_COLOR_P_COLOR_DIRTY);
     return colorPickerColor;
 }
 
-std::array<float, 3>& Tri::State::get_bg_color() {
+Color& Tri::State::get_bg_color() {
     flags.set(F_BG_COLOR_P_COLOR_DIRTY);
     return bgColorPickerColor;
 }
@@ -543,21 +533,13 @@ float Tri::State::get_pi() const {
     return pi;
 }
 
-std::array<float, 4>& Tri::State::get_selected_tri_color() {
-    tris.at(selectedTri).fillColor = Color{
-        (unsigned char)(255.0f * selectedTriColor[0]),
-        (unsigned char)(255.0f * selectedTriColor[1]),
-        (unsigned char)(255.0f * selectedTriColor[2]),
-        (unsigned char)(255.0f * selectedTriColor[3])};
+Color& Tri::State::get_selected_tri_color() {
+    tris.at(selectedTri).fillColor = selectedTriColor;
     return selectedTriColor;
 }
 
 void Tri::State::close_selected_tri_mode() {
-    tris.at(selectedTri).fillColor = Color{
-        (unsigned char)(255.0f * selectedTriColor[0]),
-        (unsigned char)(255.0f * selectedTriColor[1]),
-        (unsigned char)(255.0f * selectedTriColor[2]),
-        (unsigned char)(255.0f * selectedTriColor[3])};
+    tris.at(selectedTri).fillColor = selectedTriColor;
     flags.set(F_DRAW_CACHE_DIRTY);
     reset_modes();
 }

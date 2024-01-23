@@ -57,8 +57,8 @@ namespace Tri {
         CurrentState currentTri_maxState;
         Circle pointCircle;
 
-        std::array<float, 4> colorPickerColor;
-        std::array<float, 3> bgColorPickerColor;
+        Color colorPickerColor;
+        Color bgColorPickerColor;
         Color bgColor;
 
         std::array<char, 256> saveFilenameBuffer;
@@ -69,7 +69,7 @@ namespace Tri {
         const float pi;
 
         unsigned int selectedTri;
-        std::array<float, 4> selectedTriColor;
+        Color selectedTriColor;
         float selectedTriBlinkTimer;
 
         int inputWidth;
@@ -97,8 +97,8 @@ namespace Tri {
         void append_notification_text(const char *text);
 
     public:
-        std::array<float, 4>& get_color();
-        std::array<float, 3>& get_bg_color();
+        Color& get_color();
+        Color& get_bg_color();
 
         std::array<char, 256>* get_save_filename_buffer();
         bool do_save();
@@ -119,7 +119,7 @@ namespace Tri {
 
         float get_pi() const;
 
-        std::array<float, 4>& get_selected_tri_color();
+        Color& get_selected_tri_color();
         void close_selected_tri_mode();
 
     private:
