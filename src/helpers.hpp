@@ -30,7 +30,7 @@ namespace Tri {
     // so this should be called during update, not draw
     inline void draw_help(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_DISPLAY_HELP)) {
-            GuiFade(1.0f);
+            GuiSetAlpha(1.0f);
             if(!GuiWindowBox({10.0f,
                              10.0f,
                              800.0f - 20.0f,
@@ -81,7 +81,7 @@ namespace Tri {
     inline void draw_notification(Tri::State *state) {
         float alpha = state->get_notification_alpha();
         if(alpha > 0.0f) {
-            GuiFade(alpha);
+            GuiSetAlpha(alpha);
             GuiPanel({(800 - SHOW_HELP_WIDTH) / 2.0f,
                       (600 - SHOW_HELP_HEIGHT) / 2.0f,
                       SHOW_HELP_WIDTH,
@@ -94,24 +94,53 @@ namespace Tri {
         }
     }
 
+    inline Color float_color_to_color(std::array<float, 4> fc) {
+        return Color {
+            (unsigned char)(fc[0] * 255.0F),
+            (unsigned char)(fc[1] * 255.0F),
+            (unsigned char)(fc[2] * 255.0F),
+            (unsigned char)(fc[3] * 255.0F)
+        };
+    }
+
+    inline Color float3_color_to_color(std::array<float, 3> fc) {
+        return Color {
+            (unsigned char)(fc[0] * 255.0F),
+            (unsigned char)(fc[1] * 255.0F),
+            (unsigned char)(fc[2] * 255.0F),
+            255
+        };
+    }
+
+    inline std::array<float, 4> color_to_float_color(Color c) {
+        return {
+            ((float)c.r) / 255.0F,
+            ((float)c.g) / 255.0F,
+            ((float)c.b) / 255.0F,
+            ((float)c.a) / 255.0F
+        };
+    }
+
+    inline std::array<float, 3> color_to_float3_color(Color c) {
+        return {
+            ((float)c.r) / 255.0F,
+            ((float)c.g) / 255.0F,
+            ((float)c.b) / 255.0F
+        };
+    }
+
     inline void draw_color_picker(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_DISPLAY_COLOR_P)) {
-            GuiFade(1.0f);
+            GuiSetAlpha(1.0f);
             if(!GuiWindowBox({4.0f, 4.0f, 242.0f, 292.0f}, "Tri Color Picker")) {
                 auto &colorArray = state->get_color();
-                Color color = GuiColorPicker(
+                // TODO this is called every draw, maybe use a designated member variable.
+                Color color = float_color_to_color(colorArray);
+                GuiColorPicker(
                     {8.0f, 32.0f, 206.0f, 240.0f},
                     nullptr,
-                    {(unsigned char)(colorArray[0] * 255.0f),
-                     (unsigned char)(colorArray[1] * 255.0f),
-                     (unsigned char)(colorArray[2] * 255.0f),
-                     (unsigned char)(colorArray[3] * 255.0f)});
-                colorArray = {
-                    color.r / 255.0f,
-                    color.g / 255.0f,
-                    color.b / 255.0f,
-                    color.a / 255.0f
-                };
+                    &color);
+                colorArray = color_to_float_color(color);
                 if(GuiButton({8.0f, 272.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_color_picker();
                 }
@@ -123,21 +152,16 @@ namespace Tri {
 
     inline void draw_bg_color_picker(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_DISPLAY_BG_COLOR_P)) {
-            GuiFade(1.0f);
+            GuiSetAlpha(1.0f);
             if(!GuiWindowBox({250.0f, 4.0f, 242.0f, 292.0f}, "BG Color Picker")) {
                 auto &colorArray = state->get_bg_color();
-                Color color = GuiColorPicker(
+                // TODO this is called every draw, maybe use a designated member variable.
+                Color color = float3_color_to_color(colorArray);
+                GuiColorPicker(
                     {254.0f, 32.0f, 206.0f, 240.0f},
                     nullptr,
-                    {(unsigned char)(colorArray[0] * 255.0f),
-                     (unsigned char)(colorArray[1] * 255.0f),
-                     (unsigned char)(colorArray[2] * 255.0f),
-                     255});
-                colorArray = {
-                    color.r / 255.0f,
-                    color.g / 255.0f,
-                    color.b / 255.0f
-                };
+                    &color);
+                colorArray = color_to_float3_color(color);
                 if(GuiButton({254.0f, 272.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_bg_color_picker();
                 }
@@ -150,7 +174,7 @@ namespace Tri {
     inline void draw_save(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_DISPLAY_SAVE)) {
             auto *filenameBuffer = state->get_save_filename_buffer();
-            GuiFade(1.0f);
+            GuiSetAlpha(1.0f);
             if(!GuiWindowBox({4.0f, 300.0f, 292.0f, 292.0f}, "Save")) {
                 GuiTextBox(
                     {8.0f, 328.0f, 284.0f, 20.0f},
@@ -174,7 +198,7 @@ namespace Tri {
 
     inline void draw_change_size(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_DISPLAY_CHANGE_SIZE)) {
-            GuiFade(1.0f);
+            GuiSetAlpha(1.0f);
             if(!GuiWindowBox({300.0f, 300.0f, 292.0f, 292.0f}, "Change Size")) {
                 GuiValueBox(
                         {384.0f, 328.0f, 80.0f, 16.0f},
@@ -264,22 +288,16 @@ namespace Tri {
 
     inline void draw_edit_tri(Tri::State *state) {
         if(state->get_flags().test(Tri::State::F_TRI_EDIT_MODE)) {
-            GuiFade(1.0f);
+            GuiSetAlpha(1.0f);
             if(!GuiWindowBox({500.0f, 4.0f, 242.0f, 292.0f}, "Edit Tri Color Picker")) {
                 auto &colorArray = state->get_selected_tri_color();
-                Color color = GuiColorPicker(
+                // TODO this is called every draw, maybe use a designated member variable.
+                Color color = float_color_to_color(colorArray);
+                GuiColorPicker(
                     {504.0f, 32.0f, 206.0f, 240.0f},
                     nullptr,
-                    {(unsigned char)(colorArray[0] * 255.0f),
-                     (unsigned char)(colorArray[1] * 255.0f),
-                     (unsigned char)(colorArray[2] * 255.0f),
-                     (unsigned char)(colorArray[3] * 255.0f)});
-                colorArray = {
-                    color.r / 255.0f,
-                    color.g / 255.0f,
-                    color.b / 255.0f,
-                    color.a / 255.0f
-                };
+                    &color);
+                colorArray = color_to_float_color(color);
                 if(GuiButton({504.0f, 272.0f, 234.0f, 16.0f}, "Close")) {
                     state->close_selected_tri_mode();
                 }
