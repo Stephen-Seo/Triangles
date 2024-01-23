@@ -423,6 +423,7 @@ bool Tri::State::do_save() {
     draw_to_target(&saveTexture);
 
     Image saveImage = LoadImageFromTexture(saveTexture.texture);
+    ImageFlipVertical(&saveImage);
     UnloadRenderTexture(saveTexture);
     if(ExportImage(saveImage, saveFilenameBuffer.data())) {
 #ifndef NDEBUG
