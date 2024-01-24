@@ -1,0 +1,15 @@
+name: Run UnitTests
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build-and-run-tests:
+    runs-on: any_archLinux
+    steps:
+      - run: git clone --depth=1 --no-single-branch https://git.seodisparate.com/stephenseo/Triangles.git Tri
+      - run: cd Tri && git checkout $GITHUB_REF_NAME
+      - run: cd Tri && git submodule update --init --recursive
+      - run: cd Tri && cmake -S . -B buildDebug -DCMAKE_BUILD_TYPE=Debug
+      - run: make -C Tri/buildDebug UnitTest_Triangles && ./Tri/buildDebug/UnitTest_Triangles
