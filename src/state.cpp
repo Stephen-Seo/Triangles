@@ -22,11 +22,9 @@ dt(1.0f/60.0f),
 notificationAlpha(1.0f),
 notificationText(),
 tris(),
-trisIndex(0),
 currentTri(),
 currentTri_state(CurrentState::NONE),
-currentTri_maxState(CurrentState::NONE),
-pointCircle(),
+pointCircle({7.0F, 7.0F}, 7.0F, WHITE),
 colorPickerColor{255, 255, 255, 255},
 bgColorPickerColor{0, 0, 0, 255},
 bgColor(BLACK),
@@ -38,7 +36,9 @@ selectedTri(),
 selectedTriColor{255, 255, 255, 255},
 selectedTriBlinkTimer(),
 inputWidth(800),
-inputHeight(600)
+inputHeight(600),
+history(),
+history_idx(0)
 {
     InitWindow(width, height, "Triangles");
     SetTargetFPS(60);
@@ -46,11 +46,6 @@ inputHeight(600)
     flags.set(F_IS_RUNNING); // is running
 
     set_notification_text("Press \"H\" for help");
-
-    pointCircle.setRadius(7.0f);
-    pointCircle.translate({7.0f, 7.0f});
-    pointCircle.fillColor = WHITE;
-    pointCircle.outlineColor = BLACK;
 
     saveFilenameBuffer.fill(0);
 
@@ -61,6 +56,52 @@ inputHeight(600)
     GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x303030);
 }
 #pragma GCC diagnostic pop
+
+Tri::State::Action::Action() :
+type(Tri::State::Action::AT_NONE),
+idx(0),
+color(BLACK),
+data{{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}}
+{}
+
+Tri::State::Action::Action(const Type& type, IndexT idx, const Color& color, float *data) :
+type(type),
+idx(idx),
+color(color),
+data()
+{
+    init(data);
+}
+
+Tri::State::Action::Action(Type&& type, IndexT idx, Color&& color, float *data) :
+type(type),
+idx(idx),
+color(color),
+data()
+{
+    init(data);
+}
+
+void Tri::State::Action::init(float *data) {
+    switch(type) {
+    case AT_TRI:
+    case AT_TRI_DEL:
+        for(unsigned int i = 0; i < 6; ++i) {
+            this->data.tri[i] = data[i];
+        }
+        break;
+    case AT_POINT:
+        this->data.point[0] = data[0];
+        this->data.point[1] = data[1];
+        break;
+    default:
+        type = AT_NONE;
+        idx = 0;
+        color = BLACK;
+        this->data = {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}};
+        break;
+    }
+}
 
 Tri::State::~State() {
     UnloadRenderTexture(drawCache);
@@ -81,51 +122,91 @@ void Tri::State::handle_events() {
                 break;
             case KEY_U:
                 flags.set(F_DRAW_CACHE_DIRTY);
-                if(currentTri_state > 0) {
-                    switch(currentTri_state) {
-                    case FIRST:
+                if (history_idx > 0) {
+                    switch(history[history_idx-1].type) {
+                    case Action::AT_TRI:
+                        tris.erase(
+                            tris.cbegin() + history[history_idx-1].idx);
+                        restore_points_on_tri_del(history_idx - 1);
+                        break;
+                    case Action::AT_TRI_DEL:
+                    {
+                        tris.emplace(
+                            tris.cbegin() + history[history_idx].idx,
+                            Triangle(
+                                {{
+                                    {history[history_idx-1].data.tri[0],
+                                     history[history_idx-1].data.tri[1]},
+                                    {history[history_idx-1].data.tri[2],
+                                     history[history_idx-1].data.tri[3]},
+                                    {history[history_idx-1].data.tri[4],
+                                     history[history_idx-1].data.tri[5]},
+                                }},
+                                history[history_idx-1].color
+                            )
+                        );
                         currentTri_state = CurrentState::NONE;
                         break;
-                    case SECOND:
-                        currentTri_state = CurrentState::FIRST;
+                    }
+                    case Action::AT_POINT:
+                        assert(history[history_idx-1].idx + 1 == currentTri_state
+                            && "Point in history must match point index");
+                        assert(currentTri_state > 0
+                            && "There must be a point to undo a point");
+                        currentTri_state = static_cast<CurrentState>(currentTri_state - 1);
                         break;
                     default:
                         assert(!"Unreachable code");
                         break;
                     }
-                } else if(trisIndex > 0) {
-                    --trisIndex;
+                    --history_idx;
                 }
                 break;
             case KEY_R:
                 flags.set(F_DRAW_CACHE_DIRTY);
-                if(currentTri_state != CurrentState::NONE
-                        && currentTri_state < currentTri_maxState) {
-                    switch(currentTri_state) {
-                    case NONE:
-                        currentTri_state = CurrentState::FIRST;
+                if(history_idx < history.size()) {
+                    switch(history[history_idx].type) {
+                    case Action::AT_TRI:
+                    {
+                        tris.emplace(
+                            tris.cbegin() + history[history_idx].idx,
+                            Triangle(
+                                {{
+                                    {history[history_idx].data.tri[0],
+                                     history[history_idx].data.tri[1]},
+                                    {history[history_idx].data.tri[2],
+                                     history[history_idx].data.tri[3]},
+                                    {history[history_idx].data.tri[4],
+                                     history[history_idx].data.tri[5]},
+                                }},
+                                history[history_idx].color
+                            )
+                        );
+                        currentTri_state = CurrentState::NONE;
                         break;
-                    case FIRST:
-                        currentTri_state = CurrentState::SECOND;
+                    }
+                        break;
+                    case Action::AT_TRI_DEL:
+                        tris.erase(
+                            tris.cbegin() + history[history_idx].idx);
+                        restore_points_on_tri_del(history_idx);
+                        break;
+                    case Action::AT_POINT:
+                        assert(history[history_idx].idx == currentTri_state
+                            && "Point in history must match point index");
+                        assert(currentTri_state < CurrentState::SECOND
+                            && "Current point state must be 0 or 1");
+                        currentTri[currentTri_state].x = history[history_idx].data.point[0];
+                        currentTri[currentTri_state].y = history[history_idx].data.point[1];
+                        currentTri_state = static_cast<CurrentState>(
+                            currentTri_state + 1);
+                        pointCircle.fillColor = history[history_idx].color;
                         break;
                     default:
                         assert(!"Unreachable code");
                         break;
                     }
-                } else if(tris.size() > trisIndex) {
-                    ++trisIndex;
-                } else if(currentTri_state < currentTri_maxState) {
-                    switch(currentTri_state) {
-                    case NONE:
-                        currentTri_state = CurrentState::FIRST;
-                        break;
-                    case FIRST:
-                        currentTri_state = CurrentState::SECOND;
-                        break;
-                    default:
-                        assert(!"Unreachable code");
-                        break;
-                    }
+                    ++history_idx;
                 }
                 break;
             case KEY_C:
@@ -187,34 +268,53 @@ void Tri::State::handle_events() {
     if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if(can_draw()) {
             switch(currentTri_state) {
-            case CurrentState::NONE:
+            case CurrentState::NONE: {
                 currentTri[0] = {GetMouseX(), GetMouseY()};
-                if(trisIndex < tris.size()) {
-                    tris.resize(trisIndex);
-                }
                 currentTri_state = CurrentState::FIRST;
-                currentTri_maxState = CurrentState::FIRST;
-                break;
-            case CurrentState::FIRST:
+                if(history_idx < history.size()) {
+                    history.resize(history_idx);
+                }
+                float points[2] = {currentTri[0].x, currentTri[0].y};
+                history.push_back(Action(Action::AT_POINT,
+                                         0,
+                                         pointCircle.fillColor,
+                                         points));
+                ++history_idx;
+                break; }
+            case CurrentState::FIRST: {
                 currentTri[1] = {GetMouseX(), GetMouseY()};
-                if(trisIndex < tris.size()) {
-                    tris.resize(trisIndex);
-                }
                 currentTri_state = CurrentState::SECOND;
-                currentTri_maxState = CurrentState::SECOND;
-                break;
-            case CurrentState::SECOND:
-                currentTri[2] = {GetMouseX(), GetMouseY()};
-                if(trisIndex < tris.size()) {
-                    tris.resize(trisIndex);
+                if(history_idx < history.size()) {
+                    history.resize(history_idx);
                 }
-                ++trisIndex;
+                float points[2] = {currentTri[1].x, currentTri[1].y};
+                history.push_back(Action(Action::AT_POINT,
+                                         1,
+                                         pointCircle.fillColor,
+                                         points));
+                ++history_idx;
+                break; }
+            case CurrentState::SECOND: {
+                currentTri[2] = {GetMouseX(), GetMouseY()};
                 make_counter_clockwise(currentTri);
                 tris.emplace_back(currentTri, pointCircle.fillColor);
                 currentTri_state = CurrentState::NONE;
-                currentTri_maxState = CurrentState::NONE;
                 flags.set(F_DRAW_CACHE_DIRTY);
-                break;
+
+                if(history_idx < history.size()) {
+                    history.resize(history_idx);
+                }
+                float points[6] = {
+                    currentTri[0].x, currentTri[0].y,
+                    currentTri[1].x, currentTri[1].y,
+                    currentTri[2].x, currentTri[2].y,
+                };
+                history.push_back(Action(Action::AT_TRI,
+                                         tris.size()-1,
+                                         pointCircle.fillColor,
+                                         points));
+                ++history_idx;
+                break; }
             }
         } else if(flags.test(F_COPY_COLOR_MODE)) {
             check_draw_cache();
@@ -245,15 +345,14 @@ void Tri::State::handle_events() {
             if(my < 0) { my = 0; }
             else if(my >= (int)height) { my = height - 1; }
 
-            for(unsigned int i = trisIndex; i-- > 0; ) {
-                if(is_within_shape(tris.at(i), {mx, my})) {
-                    selectedTri = i;
-                    tris[i].outlineColor = invert_color(tris[i].fillColor);
+            for (auto &tri : tris) {
+                if(is_within_shape(tri, {mx, my})) {
+                    tri.outlineColor = invert_color(tri.fillColor);
                     flags.reset(F_SELECT_TRI_MODE);
                     flags.set(F_TRI_EDIT_MODE);
                     flags.set(F_TRI_EDIT_DRAW_TRI);
                     selectedTriBlinkTimer = 1.0f;
-                    selectedTriColor = tris[i].fillColor;
+                    selectedTriColor = tri.fillColor;
                     break;
                 }
             }
@@ -325,9 +424,7 @@ void Tri::State::draw() {
 
     if(can_draw()) {
         for(unsigned int i = 0; i < currentTri_state; ++i) {
-            pointCircle.resetTransform();
-            pointCircle.translate(currentTri[i]);
-            pointCircle.draw();
+            DrawCircle(currentTri[i].x, currentTri[i].y, pointCircle.getRadius(), pointCircle.fillColor);
         }
     }
 
@@ -348,7 +445,7 @@ void Tri::State::draw_to_target(RenderTexture2D *target) {
         ClearBackground(bgColor);
 
         // draw tris
-        for(unsigned int i = 0; i < trisIndex; ++i) {
+        for(unsigned int i = 0; i < tris.size(); ++i) {
             tris[i].draw();
         }
         EndTextureMode();
@@ -357,7 +454,7 @@ void Tri::State::draw_to_target(RenderTexture2D *target) {
         ClearBackground(bgColor);
 
         // draw tris
-        for(unsigned int i = 0; i < trisIndex; ++i) {
+        for(unsigned int i = 0; i < tris.size(); ++i) {
             tris[i].draw();
         }
     }
@@ -562,4 +659,30 @@ int* Tri::State::get_input_width() {
 
 int* Tri::State::get_input_height() {
     return &inputHeight;
+}
+
+void Tri::State::restore_points_on_tri_del(Action::IndexT end) {
+    assert(end < history.size()
+        && "Index on history must be in range");
+    currentTri[2].x = history[end].data.tri[4];
+    currentTri[2].y = history[end].data.tri[5];
+    pointCircle.fillColor = history[end].color;
+    unsigned int currentTriIdx = 1;
+    while(end-- > 0) {
+        if(history[end].type == Action::AT_POINT) {
+            assert(history[end].idx == currentTriIdx
+                && "Last point must be second point");
+            currentTri[currentTriIdx].x = history[end].data.point[0];
+            currentTri[currentTriIdx].y = history[end].data.point[1];
+            if(currentTriIdx > 0) {
+                --currentTriIdx;
+            } else {
+                currentTri_state = CurrentState::SECOND;
+                return;
+            }
+        }
+    }
+
+    assert(!"Unreachable code");
+    return;
 }
