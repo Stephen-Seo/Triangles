@@ -1,0 +1,24 @@
+name: Run UnitTests
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build-and-run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: sudo /usr/bin/env DEBIAN_FRONTEND=noninteractive apt-get install cmake git patch libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev
+      - name: Fetch Raylib sources
+        run: git clone https://github.com/raysan5/raylib raylib && cd raylib && git checkout 5.0
+      - name: Patch Raylib version (version 5.0 in cmake)
+        run: cd raylib && git show 032cc497ca5aaca862dc926a93c2a45ed8017737 | patch -p1
+      - name: Build Raylib
+        run: cd raylib && cmake -B buildRelease -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=On -DCMAKE_INSTALL_PREFIX=/usr/local && make -C buildRelease
+      - name: Install Raylib
+        run: cd raylib/buildRelease && sudo make install
+      - name: Fetch Triangles
+        run: git clone --depth=1 --no-single-branch https://github.com/Stephen-Seo/Triangles Tri && cd Tri && git checkout $GITHUB_REF_NAME && git submodule update --init --recursive
+      - name: Build and Run UnitTests
+        run: cd Tri && cmake -B buildDebug -S . -DCMAKE_BUILD_TYPE=Debug && make -C buildDebug UnitTest_Triangles && ./buildDebug/UnitTest_Triangles
