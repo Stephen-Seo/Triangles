@@ -54,9 +54,9 @@ target_link_libraries(Triangles PUBLIC TrianglesLib)
 target_compile_features(TrianglesLib PUBLIC cxx_std_17)
 
 if(BUILD_SHARED_LIBS OR (UNIX AND NOT CYGWIN) OR (CMAKE_CXX_COMPILER_ID MATCHES "MSVC"))
-    find_package(raylib 4.2 REQUIRED)
+    find_package(raylib 5.0 REQUIRED)
 else()
-    find_package(raylib 4.2 REQUIRED)
+    find_package(raylib 5.0 REQUIRED)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
