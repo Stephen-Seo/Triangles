@@ -669,17 +669,17 @@ void Tri::State::restore_points_on_tri_del(Action::IndexT end) {
     pointCircle.fillColor = history[end].color;
     unsigned int currentTriIdx = 1;
     while(end-- > 0) {
-        if(history[end].type == Action::AT_POINT) {
-            assert(history[end].idx == currentTriIdx
-                && "Last point must be second point");
-            currentTri[currentTriIdx].x = history[end].data.point[0];
-            currentTri[currentTriIdx].y = history[end].data.point[1];
-            if(currentTriIdx > 0) {
-                --currentTriIdx;
-            } else {
-                currentTri_state = CurrentState::SECOND;
-                return;
-            }
+        assert(history[end].type == Action::AT_POINT
+            && "Latest history must be AT_POINT type");
+        assert(history[end].idx == currentTriIdx
+            && "Last point must be second point");
+        currentTri[currentTriIdx].x = history[end].data.point[0];
+        currentTri[currentTriIdx].y = history[end].data.point[1];
+        if(currentTriIdx > 0) {
+            --currentTriIdx;
+        } else {
+            currentTri_state = CurrentState::SECOND;
+            return;
         }
     }
 
