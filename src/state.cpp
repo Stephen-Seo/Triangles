@@ -121,6 +121,10 @@ void Tri::State::handle_events() {
                 flags.flip(F_DISPLAY_HELP);
                 break;
             case KEY_U:
+                if (flags.test(F_TRI_EDIT_MODE)) {
+                    set_notification_text("Cannot undo during editing tri!");
+                    break;
+                }
                 flags.set(F_DRAW_CACHE_DIRTY);
                 if (history_idx > 0) {
                     switch(history[history_idx-1].type) {
@@ -345,14 +349,15 @@ void Tri::State::handle_events() {
             if(my < 0) { my = 0; }
             else if(my >= (int)height) { my = height - 1; }
 
-            for (auto &tri : tris) {
-                if(is_within_shape(tri, {mx, my})) {
-                    tri.outlineColor = invert_color(tri.fillColor);
+            for (unsigned int i = 0; i < tris.size(); ++i) {
+                if(is_within_shape(tris[i], {mx, my})) {
+                    tris[i].outlineColor = invert_color(tris[i].fillColor);
                     flags.reset(F_SELECT_TRI_MODE);
                     flags.set(F_TRI_EDIT_MODE);
                     flags.set(F_TRI_EDIT_DRAW_TRI);
                     selectedTriBlinkTimer = 1.0f;
-                    selectedTriColor = tri.fillColor;
+                    selectedTriColor = tris[i].fillColor;
+                    selectedTri = i;
                     break;
                 }
             }
@@ -367,6 +372,7 @@ void Tri::State::update() {
     dt = GetFrameTime();
 
     if(notificationAlpha > 0.0f) {
+        // TODO use sq_lerp
         notificationAlpha -= dt * STARTING_HELP_FADE_RATE;
         if(notificationAlpha < 0.0f) {
             notificationAlpha = 0.0f;
@@ -418,7 +424,7 @@ void Tri::State::draw() {
 
     if(flags.test(F_TRI_EDIT_MODE) && flags.test(F_TRI_EDIT_DRAW_TRI)) {
 //        tris.at(selectedTri).setOutlineThickness(4.0f);
-        tris[selectedTri].draw();
+        tris.at(selectedTri).draw();
 //        tris.at(selectedTri).setOutlineThickness(0.0f);
     }
 
@@ -639,6 +645,20 @@ Color& Tri::State::get_selected_tri_color() {
 void Tri::State::close_selected_tri_mode() {
     tris.at(selectedTri).fillColor = selectedTriColor;
     flags.set(F_DRAW_CACHE_DIRTY);
+
+    // Set tri's new color in history.
+    for (auto &action : history) {
+        if (action.type == Action::AT_TRI
+                && tris.at(selectedTri).vertices.at(0).x == action.data.tri[0]
+                && tris.at(selectedTri).vertices.at(0).y == action.data.tri[1]
+                && tris.at(selectedTri).vertices.at(1).x == action.data.tri[2]
+                && tris.at(selectedTri).vertices.at(1).y == action.data.tri[3]
+                && tris.at(selectedTri).vertices.at(2).x == action.data.tri[4]
+                && tris.at(selectedTri).vertices.at(2).y == action.data.tri[5]) {
+            action.color = selectedTriColor;
+            break;
+        }
+    }
     reset_modes();
 }
 
