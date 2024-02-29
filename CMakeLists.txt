@@ -26,6 +26,7 @@ set(Triangles_LIB_SOURCES
     src/triangle.cpp
     src/circle.cpp
     src/raygui.cpp
+    src/helpers.cpp
 )
 
 add_library(TrianglesLib STATIC ${Triangles_LIB_SOURCES})

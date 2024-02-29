@@ -307,4 +307,8 @@ namespace Tri {
     }
 }
 
+// Color operator helpers
+bool operator==(const Color& a, const Color& b);
+bool operator!=(const Color& a, const Color& b);
+
 #endif

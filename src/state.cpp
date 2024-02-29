@@ -33,6 +33,7 @@ drawCache(),
 pi(std::acos(-1.0f)),
 selectedTri(),
 selectedTriColor{255, 255, 255, 255},
+prevTriColor{255, 255, 255, 255},
 selectedTriBlinkTimer(),
 inputWidth(800),
 inputHeight(600),
@@ -84,6 +85,11 @@ data()
     init(data);
 }
 
+Tri::State::Action &Tri::State::Action::setNewColor(Color color) {
+    this->data.newColor = color;
+    return *this;
+}
+
 void Tri::State::Action::init(float *data) {
     switch(type) {
     case AT_TRI:
@@ -95,6 +101,8 @@ void Tri::State::Action::init(float *data) {
     case AT_POINT:
         this->data.point[0] = data[0];
         this->data.point[1] = data[1];
+        break;
+    case AT_COLOR:
         break;
     default:
         type = AT_NONE;
@@ -161,6 +169,9 @@ void Tri::State::handle_events() {
                             && "There must be a point to undo a point");
                         currentTri_state = static_cast<CurrentState>(currentTri_state - 1);
                         break;
+                    case Action::AT_COLOR:
+                        tris.at(history[history_idx-1].idx).fillColor = history[history_idx-1].color;
+                        break;
                     default:
                         assert(!"Unreachable code");
                         break;
@@ -207,6 +218,9 @@ void Tri::State::handle_events() {
                         currentTri_state = static_cast<CurrentState>(
                             currentTri_state + 1);
                         pointCircle.fillColor = history[history_idx].color;
+                        break;
+                    case Action::AT_COLOR:
+                        tris.at(history[history_idx].idx).fillColor = history[history_idx].data.newColor;
                         break;
                     default:
                         assert(!"Unreachable code");
@@ -359,6 +373,7 @@ void Tri::State::handle_events() {
                     flags.set(F_TRI_EDIT_DRAW_TRI);
                     selectedTriBlinkTimer = 1.0f;
                     selectedTriColor = tris[i].fillColor;
+                    prevTriColor = tris[i].fillColor;
                     selectedTri = i;
                     clickTimeout = CLICK_TIMEOUT_TIME;
                     break;
@@ -664,22 +679,19 @@ Color& Tri::State::get_selected_tri_color() {
 }
 
 void Tri::State::close_selected_tri_mode() {
+    // Set tri's new color in history.
+    if (prevTriColor != selectedTriColor) {
+        if (history_idx < history.size()) {
+            history.resize(history_idx);
+        }
+        history.emplace_back(Action::AT_COLOR, selectedTri, prevTriColor, nullptr);
+        history.back().setNewColor(selectedTriColor);
+        ++history_idx;
+    }
+
     tris.at(selectedTri).fillColor = selectedTriColor;
     flags.set(F_DRAW_CACHE_DIRTY);
 
-    // Set tri's new color in history.
-    for (auto &action : history) {
-        if (action.type == Action::AT_TRI
-                && tris.at(selectedTri).vertices.at(0).x == action.data.tri[0]
-                && tris.at(selectedTri).vertices.at(0).y == action.data.tri[1]
-                && tris.at(selectedTri).vertices.at(1).x == action.data.tri[2]
-                && tris.at(selectedTri).vertices.at(1).y == action.data.tri[3]
-                && tris.at(selectedTri).vertices.at(2).x == action.data.tri[4]
-                && tris.at(selectedTri).vertices.at(2).y == action.data.tri[5]) {
-            action.color = selectedTriColor;
-            break;
-        }
-    }
     reset_modes();
 }
 

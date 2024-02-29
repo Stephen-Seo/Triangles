@@ -49,6 +49,7 @@ namespace Tri {
                 AT_TRI,
                 AT_TRI_DEL,
                 AT_POINT,
+                AT_COLOR,
                 AT_NONE,
             };
 
@@ -68,7 +69,10 @@ namespace Tri {
             union Data {
                 float tri[6];
                 float point[2];
+                Color newColor;
             } data;
+
+            Action &setNewColor(Color color);
 
         private:
             void init(float *data);
@@ -102,6 +106,7 @@ namespace Tri {
 
         unsigned int selectedTri;
         Color selectedTriColor;
+        Color prevTriColor;
         float selectedTriBlinkTimer;
 
         int inputWidth;
