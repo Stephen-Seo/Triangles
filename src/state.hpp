@@ -81,6 +81,7 @@ namespace Tri {
         unsigned int height;
         float dt;
         float notificationAlpha;
+        float notificationAmt;
         std::array<char, 256> notificationText;
 
         std::vector<Triangle> tris;
@@ -109,6 +110,8 @@ namespace Tri {
         std::vector<Action> history;
         Action::IndexT history_idx;
 
+        float clickTimeout;
+
     public:
         void handle_events();
         void update();
@@ -124,6 +127,9 @@ namespace Tri {
         const BitsetType get_flags() const;
 
         float get_notification_alpha() const;
+        void reset_notification_alpha();
+        void clear_notification_alpha();
+
         const char* get_notification_text() const;
 
     private:
@@ -165,6 +171,9 @@ namespace Tri {
 
     private:
         void restore_points_on_tri_del(Action::IndexT end);
+
+    public:
+        float get_click_timeout() const;
     };
 }
 

@@ -14,12 +14,20 @@
 #define SHOW_HELP_WIDTH (state->get_width() / 2.0f)
 #define SHOW_HELP_HEIGHT (state->get_height() / 2.0f)
 
+#define NOTIFICATION_FADE_RATE 0.2F
+
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
 #define CHANGE_SIZE_MIN_X 800
 #define CHANGE_SIZE_MAX_X 1920
 #define CHANGE_SIZE_MIN_Y 600
 #define CHANGE_SIZE_MAX_Y 1080
+
+#define TRI_GUI_BG_COLOR 0x505050FF
+#define TRI_GUI_BASE_COLOR 0x404040FF
+#define TRI_GUI_TEXT_COLOR 0xFFFFFFFF
+
+#define CLICK_TIMEOUT_TIME 0.4F
 
 #ifndef NDEBUG
 # include <cstdio>
@@ -268,7 +276,8 @@ namespace Tri {
                     &alpha
                 );
                 color.a = alpha * 255.0F;
-                if(GuiButton({504.0f, 308.0f, 234.0f, 16.0f}, "Close")) {
+                if(GuiButton({504.0f, 308.0f, 234.0f, 16.0f}, "Close")
+                        && state->get_click_timeout() == 0.0F) {
                     state->close_selected_tri_mode();
                 }
             } else {
@@ -290,6 +299,11 @@ namespace Tri {
             tri[0] = tri[2];
             tri[2] = t_a;
         }
+    }
+
+    inline float sq_lerp(float start, float end, float amt) {
+        amt = amt * amt;
+        return start * (1.0F - amt) + end * amt;
     }
 }
 

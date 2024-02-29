@@ -10,8 +10,6 @@
 
 #include "helpers.hpp"
 
-#define STARTING_HELP_FADE_RATE 0.2f
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 Tri::State::State(int argc, char **argv) :
@@ -20,6 +18,7 @@ width(DEFAULT_WIDTH),
 height(DEFAULT_HEIGHT),
 dt(1.0f/60.0f),
 notificationAlpha(1.0f),
+notificationAmt(0.0F),
 notificationText(),
 tris(),
 currentTri(),
@@ -38,7 +37,8 @@ selectedTriBlinkTimer(),
 inputWidth(800),
 inputHeight(600),
 history(),
-history_idx(0)
+history_idx(0),
+clickTimeout(0.0F)
 {
     InitWindow(width, height, "Triangles");
     SetTargetFPS(60);
@@ -53,7 +53,9 @@ history_idx(0)
     flags.set(F_DRAW_CACHE_INITIALIZED);
     flags.set(F_DRAW_CACHE_DIRTY);
 
-    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, 0x303030);
+    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, TRI_GUI_BG_COLOR);
+    GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, TRI_GUI_BASE_COLOR);
+    GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, TRI_GUI_TEXT_COLOR);
 }
 #pragma GCC diagnostic pop
 
@@ -240,7 +242,7 @@ void Tri::State::handle_events() {
                         "to what was\n"
                         "clicked on");
                 } else {
-                    notificationAlpha = 0.0f;
+                    clear_notification_alpha();
                 }
                 break;
             case KEY_I:
@@ -269,7 +271,7 @@ void Tri::State::handle_events() {
         keyPressed = GetKeyPressed();
     }
 
-    if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+    if(IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && clickTimeout == 0.0F) {
         if(can_draw()) {
             switch(currentTri_state) {
             case CurrentState::NONE: {
@@ -358,6 +360,7 @@ void Tri::State::handle_events() {
                     selectedTriBlinkTimer = 1.0f;
                     selectedTriColor = tris[i].fillColor;
                     selectedTri = i;
+                    clickTimeout = CLICK_TIMEOUT_TIME;
                     break;
                 }
             }
@@ -372,10 +375,11 @@ void Tri::State::update() {
     dt = GetFrameTime();
 
     if(notificationAlpha > 0.0f) {
-        // TODO use sq_lerp
-        notificationAlpha -= dt * STARTING_HELP_FADE_RATE;
-        if(notificationAlpha < 0.0f) {
-            notificationAlpha = 0.0f;
+        notificationAmt += dt * NOTIFICATION_FADE_RATE;
+        if (notificationAmt > 1.0F) {
+            clear_notification_alpha();
+        } else {
+            notificationAlpha = Tri::sq_lerp(1.0F, 0.0F, notificationAmt);
         }
     }
 
@@ -395,6 +399,13 @@ void Tri::State::update() {
         if(selectedTriBlinkTimer <= 0.0f) {
             selectedTriBlinkTimer = 1.0f;
             flags.flip(F_TRI_EDIT_DRAW_TRI);
+        }
+    }
+
+    if (clickTimeout > 0.0F) {
+        clickTimeout -= dt;
+        if (clickTimeout < 0.0F) {
+            clickTimeout = 0.0F;
         }
     }
 }
@@ -482,6 +493,16 @@ float Tri::State::get_notification_alpha() const {
     return notificationAlpha;
 }
 
+void Tri::State::reset_notification_alpha() {
+    notificationAlpha = 1.0F;
+    notificationAmt = 0.0F;
+}
+
+void Tri::State::clear_notification_alpha() {
+    notificationAlpha = 0.0F;
+    notificationAmt = 1.0F;
+}
+
 const char* Tri::State::get_notification_text() const {
     return notificationText.data();
 }
@@ -491,7 +512,7 @@ void Tri::State::set_notification_text(const char *text) {
     std::strncpy(notificationText.data(),
         text,
         notificationText.max_size() - 1);
-    notificationAlpha = 1.0f;
+    reset_notification_alpha();
 }
 
 void Tri::State::append_notification_text(const char *text) {
@@ -503,7 +524,7 @@ void Tri::State::append_notification_text(const char *text) {
         notificationText.data() + length,
         text,
         notificationText.max_size() - length - 1);
-    notificationAlpha = 1.0f;
+    reset_notification_alpha();
 }
 
 Color& Tri::State::get_color() {
@@ -705,4 +726,8 @@ void Tri::State::restore_points_on_tri_del(Action::IndexT end) {
 
     assert(!"Unreachable code");
     return;
+}
+
+float Tri::State::get_click_timeout() const {
+    return clickTimeout;
 }
